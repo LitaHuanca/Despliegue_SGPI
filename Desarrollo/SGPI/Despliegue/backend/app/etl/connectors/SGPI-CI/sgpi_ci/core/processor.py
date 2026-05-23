@@ -1,0 +1,259 @@
+import sys
+import os
+import json
+from typing import Dict, Any, List
+
+from pydantic import ValidationError
+
+from sgpi_ci.engines.parsers import ParserFactory
+from sgpi_ci.core.models import (
+    InvestigadorModel, ProyectoModel, PublicacionModel, TesisModel, GrupoInvestigacionModel
+)
+from sgpi_ci.utils.supabase_uploader import SupabaseUploader
+
+# Inyección del conector RENACYT
+csapiren_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'SGPI-CSAPIREN'))
+if csapiren_path not in sys.path:
+    sys.path.insert(0, csapiren_path)
+
+try:
+    from renacyt_connector import search_by_name
+    from renacyt_connector.api import RenacytConnector
+except ImportError:
+    search_by_name = None
+    RenacytConnector = None
+
+import re
+import unicodedata
+
+class EtlProcessor:
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.filename = os.path.basename(file_path)
+        self.uploader = SupabaseUploader()
+        self.failed_rows: List[Dict[str, Any]] = []
+
+    def process(self, upload_to_db: bool = True) -> Dict[str, Any]:
+        """Orquesta la extracción, enriquecimiento y carga."""
+        print(f"[{self.filename}] Iniciando procesamiento...")
+        
+        # 1. Extracción (Parsers Heurísticos)
+        try:
+            parser = ParserFactory.get_parser(self.filename)
+            raw_data = parser.parse(self.file_path)
+        except Exception as e:
+            return {"error": f"Fallo al parsear el archivo: {e}"}
+
+        print(f"[{self.filename}] Datos extraídos. Iniciando enriquecimiento RENACYT...")
+
+        # 2. Enriquecimiento (Extraer nombres únicos y consultar Renacyt)
+        unique_names = set()
+        for p in raw_data.get('proyectos', []):
+            if p.get('docente_nombre'): unique_names.add(p['docente_nombre'])
+        for p in raw_data.get('publicaciones', []):
+            if p.get('docente_nombre'): unique_names.add(p['docente_nombre'])
+        for t in raw_data.get('tesis', []):
+            if t.get('docente_nombre'): unique_names.add(t['docente_nombre'])
+        for g in raw_data.get('grupos', []):
+            if g.get('docente_nombre'): unique_names.add(g['docente_nombre'])
+        for m in raw_data.get('miembros_grupo', []):
+            if m.get('docente_nombre'): unique_names.add(m['docente_nombre'])
+
+        name_to_dni = {}
+        investigadores_validos = []
+
+        if not search_by_name:
+            print("ADVERTENCIA: renacyt_connector no disponible. No se podrá enriquecer.")
+
+        # Función auxiliar de búsqueda robusta
+        
+        # Instanciar el cliente UNA sola vez y bajar el delay para que no tarde 1 segundo por reglamento
+        renacyt_client = RenacytConnector(verify_ssl=False) if RenacytConnector else None
+        if renacyt_client:
+            renacyt_client.rate_limit_delay = 0.1
+
+        def normalize_str(s):
+            return unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore').decode('utf-8').upper()
+
+        def robust_renacyt_search(name_str: str):
+            if not renacyt_client:
+                return None
+            # Limpiamos comas y guiones para separar bien las palabras (ej. "Herrera-quispe")
+            clean_str = name_str.replace(',', ' ').replace('-', ' ')
+            words = [w.strip() for w in clean_str.split() if len(w.strip()) > 2]
+            if not words: return None
+            original_parts = [normalize_str(w) for w in words]
+
+            candidates = []
+            if len(words) >= 2:
+                candidates.append(f"{words[-2]} {words[-1]}")
+                candidates.append(f"{words[0]} {words[1]}")
+            candidates.append(words[-1])
+            candidates.append(words[0])
+
+            for cand in candidates:
+                try:
+                    res = renacyt_client.search_by_name(cand, page_size=100)
+                    if res and res.get('total', 0) > 0 and res.get('data'):
+                        for r in res['data']:
+                            c_full = normalize_str(str(r.get('nombre_completo', '')))
+                            matches = sum(1 for p in original_parts if p in c_full)
+                            if matches >= len(original_parts) - 1:
+                                return r
+                except Exception:
+                    pass
+            return None
+
+        for name in unique_names:
+            if not name or not search_by_name:
+                continue
+            
+            # Limpiar nombre para la búsqueda (títulos)
+            search_name = re.sub(r'^(Dr\.|Mg\.|Mag\.|Ing\.|Lic\.)\s*', '', name, flags=re.IGNORECASE).strip()
+            
+            try:
+                match = robust_renacyt_search(search_name)
+                if match:
+                    dni = str(match.get('numero_documento', ''))
+                    
+                    # Guardamos mapeo
+                    name_to_dni[name] = dni
+                    
+                    # Determinar investigador_sm
+                    inst = str(match.get('institucion_laboral_principal', '')).upper()
+                    is_sm = 'SAN MARCOS' in inst or 'UNMSM' in inst
+                    
+                    # Generamos InvestigadorModel
+                    try:
+                        inv = InvestigadorModel(
+                            dni=dni,
+                            nombres=str(match.get('nombres', '')).title(),
+                            apellidos=f"{match.get('apellido_paterno', '')} {match.get('apellido_materno', '')}".title(),
+                            codigo_renacyt=str(match.get('codigo_registro', '')),
+                            categoria_renacyt=str(match.get('nivel', 'No Clasificado')),
+                            investigador_sm=is_sm
+                        )
+                        investigadores_validos.append(inv.model_dump())
+                    except ValidationError:
+                        pass
+                else:
+                    self.failed_rows.append({
+                        "tipo": "INCONSISTENCIA_RENACYT",
+                        "mensaje": f"No se encontró DNI para el docente '{name}' en RENACYT.",
+                        "dato": name
+                    })
+            except Exception as e:
+                self.failed_rows.append({
+                    "tipo": "ERROR_API_RENACYT",
+                    "mensaje": f"Error buscando a '{name}': {e}",
+                    "dato": name
+                })
+
+        print(f"[{self.filename}] Enriquecimiento completo. {len(name_to_dni)} DNIs resueltos.")
+
+        # 3. Ensamblaje de Modelos Finales
+        proyectos_validos, publicaciones_validas, tesis_validas, grupos_validos = [], [], [], []
+
+        # Proyectos
+        proyectos_dict = {}
+        for p in raw_data.get('proyectos', []):
+            codigo = p['codigo_proyecto']
+            docente = p.get('docente_nombre')
+            dni = name_to_dni.get(docente)
+            
+            if codigo not in proyectos_dict:
+                proyectos_dict[codigo] = p
+                proyectos_dict[codigo]['docentes'] = []
+            
+            if dni:
+                proyectos_dict[codigo]['docentes'].append({'dni': dni, 'condicion_rol': p.get('condicion_rol', 'Miembro')})
+            elif docente:
+                self.failed_rows.append({"tipo": "PROYECTO_DOCENTE_FALTANTE", "dato": p, "mensaje": f"Docente {docente} sin DNI."})
+
+        for p in proyectos_dict.values():
+            try:
+                proyectos_validos.append(ProyectoModel(**p).model_dump())
+            except ValidationError as e:
+                self.failed_rows.append({"tipo": "VALIDACION_PROYECTO", "dato": p, "mensaje": str(e)})
+
+        # Publicaciones
+        for pub in raw_data.get('publicaciones', []):
+            dni = name_to_dni.get(pub.get('docente_nombre'))
+            if not dni:
+                self.failed_rows.append({"tipo": "PUB_DOCENTE_FALTANTE", "dato": pub, "mensaje": "Autor sin DNI resuelto."})
+                continue
+            pub['dni_autor'] = dni
+            try:
+                publicaciones_validas.append(PublicacionModel(**pub).model_dump())
+            except ValidationError as e:
+                self.failed_rows.append({"tipo": "VALIDACION_PUB", "dato": pub, "mensaje": str(e)})
+
+        # Tesis
+        for tes in raw_data.get('tesis', []):
+            dni = name_to_dni.get(tes.get('docente_nombre'))
+            if not dni:
+                self.failed_rows.append({"tipo": "TESIS_ASESOR_FALTANTE", "dato": tes, "mensaje": "Asesor sin DNI resuelto."})
+                continue
+            tes['dni_asesor'] = dni
+            try:
+                tesis_validas.append(TesisModel(**tes).model_dump())
+            except ValidationError as e:
+                self.failed_rows.append({"tipo": "VALIDACION_TESIS", "dato": tes, "mensaje": str(e)})
+
+        # Grupos de Investigación
+        grupos_dict = {}
+        for g in raw_data.get('grupos', []):
+            nombre = g['nombre_grupo']
+            if nombre not in grupos_dict:
+                grupos_dict[nombre] = g
+                grupos_dict[nombre]['miembros'] = []
+                grupos_dict[nombre]['lineas_investigacion'] = []
+            dni = name_to_dni.get(g.get('docente_nombre'))
+            if dni:
+                grupos_dict[nombre]['dni_coordinador'] = dni
+                grupos_dict[nombre]['miembros'].append({'dni': dni, 'condicion_miembro': 'Coordinador'})
+        
+        for m in raw_data.get('miembros_grupo', []):
+            nombre = m['nombre_grupo']
+            if nombre not in grupos_dict:
+                grupos_dict[nombre] = {'nombre_grupo': nombre, 'miembros': [], 'lineas_investigacion': []}
+            dni = name_to_dni.get(m.get('docente_nombre'))
+            if dni:
+                grupos_dict[nombre]['miembros'].append({'dni': dni, 'condicion_miembro': m.get('condicion_miembro', 'Titular')})
+            if m.get('lineas_investigacion'):
+                grupos_dict[nombre]['lineas_investigacion'].extend(m['lineas_investigacion'])
+                
+        for g in grupos_dict.values():
+            try:
+                grupos_validos.append(GrupoInvestigacionModel(**g).model_dump())
+            except ValidationError as e:
+                self.failed_rows.append({"tipo": "VALIDACION_GRUPO", "dato": g, "mensaje": str(e)})
+
+        # 4. Carga (Supabase)
+        resultados_db = {}
+        if upload_to_db:
+            print(f"[{self.filename}] Cargando a BD...")
+            if investigadores_validos:
+                resultados_db['investigadores'] = self.uploader.upload('importar_ci_investigadores', investigadores_validos)
+            if proyectos_validos:
+                resultados_db['proyectos'] = self.uploader.upload('importar_ci_proyectos', proyectos_validos)
+            if grupos_validos:
+                resultados_db['grupos'] = self.uploader.upload('importar_ci_grupos', grupos_validos)
+            if publicaciones_validas:
+                resultados_db['publicaciones'] = self.uploader.upload('importar_ci_publicaciones', publicaciones_validas)
+            if tesis_validas:
+                resultados_db['tesis'] = self.uploader.upload('importar_ci_tesis', tesis_validas)
+
+        return {
+            "archivo": self.filename,
+            "entidades_extraidas": {
+                "investigadores": len(investigadores_validos),
+                "proyectos": len(proyectos_validos),
+                "publicaciones": len(publicaciones_validas),
+                "tesis": len(tesis_validas),
+                "grupos": len(grupos_validos)
+            },
+            "resultados_db": resultados_db,
+            "conflictos_inconsistencias": len(self.failed_rows),
+            "detalle_conflictos": self.failed_rows
+        }

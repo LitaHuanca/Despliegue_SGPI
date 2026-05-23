@@ -11,7 +11,11 @@ const app = express()
 const PORT = process.env.PORT ?? 3000
 
 // ── Middlewares globales ──────────────────────────────────────
-app.use(cors())
+app.use(cors({
+  origin:       process.env.FRONTEND_URL ?? 'http://localhost:3001',
+  methods:      ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
 app.use(express.json())
 
 // ── Health check ──────────────────────────────────────────────
@@ -19,12 +23,12 @@ app.get('/', (req, res) => {
   res.json({
     sistema: 'SGPI — Sistema de Gestión de Proyectos de Investigación',
     version: '1.0.0',
-    estado:  'operativo',
+    estado: 'operativo',
     endpoints: {
       auth: {
         register: 'POST /api/auth/register',
-        login:    'POST /api/auth/login',
-        me:       'GET  /api/auth/me  (requiere Bearer Token)',
+        login: 'POST /api/auth/login',
+        me: 'GET  /api/auth/me  (requiere Bearer Token)',
       },
     },
   })
@@ -43,7 +47,7 @@ app.use((req, res) => {
 
 // ── Manejo global de errores ──────────────────────────────────
 app.use((err, req, res, _next) => {
-  console.error('❌ Error no controlado:', err)
+  console.error('Error no controlado:', err)
   res.status(500).json({
     success: false,
     error: 'Error interno del servidor.',
@@ -55,8 +59,8 @@ app.listen(PORT, () => {
   console.log('╔══════════════════════════════════════════════════════╗')
   console.log('║   SGPI — API de Autenticación                        ║')
   console.log('╚══════════════════════════════════════════════════════╝')
-  console.log(`\n🚀 Servidor corriendo en  http://localhost:${PORT}`)
-  console.log(`\n📡 Endpoints disponibles:`)
+  console.log(`\nServidor corriendo en  http://localhost:${PORT}`)
+  console.log(`\nEndpoints disponibles:`)
   console.log(`   POST http://localhost:${PORT}/api/auth/register`)
   console.log(`   POST http://localhost:${PORT}/api/auth/login`)
   console.log(`   GET  http://localhost:${PORT}/api/auth/me`)

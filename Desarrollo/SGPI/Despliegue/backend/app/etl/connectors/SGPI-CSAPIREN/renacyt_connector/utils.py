@@ -13,7 +13,7 @@ def parse_epoch_ms(ms):
         seconds = float(ms) / 1000.0
         # Use UTC timezone to ensure consistency
         dt = datetime.datetime.fromtimestamp(seconds, tz=datetime.timezone.utc)
-        return dt.strftime('%d/%m/%Y')
+        return dt.strftime('%Y-%m-%d')
     except (ValueError, TypeError, OverflowError):
         return None
 

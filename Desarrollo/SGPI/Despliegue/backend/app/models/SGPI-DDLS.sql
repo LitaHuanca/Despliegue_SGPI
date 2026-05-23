@@ -57,6 +57,7 @@ CREATE TABLE grupo_investigacion (
     descripcion          TEXT,                     -- Edición descriptiva requerida (CU05)
     facultad             VARCHAR(100) DEFAULT 'Ingeniería de Sistemas e Informática',
     dni_coordinador      VARCHAR(15)  REFERENCES investigador(dni) ON DELETE SET NULL,
+    correo_coordinador   VARCHAR(255),
     lineas_investigacion JSONB,                    -- Ej: ["Sistemas Complejos", "IA"]
     fecha_reconocimiento DATE,                     -- Reconocimiento oficial VRIP
     url_vrip             VARCHAR(255),
@@ -86,8 +87,8 @@ CREATE TABLE convocatoria (
     titulo_convocatoria      TEXT         NOT NULL,
     entidad_emisora          VARCHAR(100) DEFAULT 'VRIP-UNMSM',
     presupuesto_maximo       DECIMAL(12,2),
-    fecha_inicio_inscripcion DATE         NOT NULL,
-    fecha_cierre             DATE         NOT NULL,
+    fecha_inicio_inscripcion DATE,
+    fecha_cierre             DATE,
     url_bases_vrip           VARCHAR(255),
     cambios_cronograma       JSONB,                -- Historial de modificaciones de fechas (CU12)
     estado_convocatoria      VARCHAR(50)  DEFAULT 'Abierta',
@@ -99,18 +100,24 @@ CREATE TABLE convocatoria (
 --    PK sintética para soportar publicaciones nacionales sin DOI (SciELO, Latindex).
 CREATE TABLE publicacion (
     id_publicacion  SERIAL        PRIMARY KEY,
-    doi_codigo      VARCHAR(100)  UNIQUE,          -- Nullable para revistas sin DOI
+    doi_codigo      VARCHAR(100),                  -- Nullable, unicidad parcial vía índice
     titulo_articulo TEXT          NOT NULL,
     issn            VARCHAR(50),
     volumen         VARCHAR(50),
     tipo_publicacion VARCHAR(100) NOT NULL,        -- Artículo, Capítulo de libro, Ponencia
     nombre_revista  VARCHAR(255),
+    nombre_evento   VARCHAR(255),                  -- Nombre del Congreso, Taller, etc.
     cuartil_impacto VARCHAR(10),                   -- Q1, Q2, Q3, Q4
     indexacion      VARCHAR(100),                  -- Scopus, Web of Science, SciELO
     fecha_publicacion DATE,
     url_documento   VARCHAR(255),
+    codigo_grupo    VARCHAR(50)   REFERENCES grupo_investigacion(codigo_grupo) ON DELETE SET NULL,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+CREATE UNIQUE INDEX idx_publicacion_doi_notnull
+    ON publicacion(doi_codigo)
+    WHERE doi_codigo IS NOT NULL;
 
 
 -- ------------------------------------------------------------------------------------
@@ -141,14 +148,16 @@ CREATE TABLE proyecto (
     codigo_proyecto      VARCHAR(50)   PRIMARY KEY,
     resolucion_aprobacion VARCHAR(100) UNIQUE,
     titulo_proyecto      TEXT          NOT NULL,
-    tipo_proyecto        VARCHAR(50)   NOT NULL CHECK (tipo_proyecto IN (
+    tipo_proyecto        VARCHAR(50)   CHECK (tipo_proyecto IN (
                              'Básico', 'Aplicado', 'Tesis'
                          )),
+    tipo_programa        VARCHAR(20),  -- PCONFIGI, SINFIN, PMULTIS...
     facultad_proyecto    VARCHAR(100)  DEFAULT 'Ingeniería de Sistemas e Informática',
     presupuesto_asignado DECIMAL(12,2) DEFAULT 0.00,
     codigo_grupo         VARCHAR(50)   REFERENCES grupo_investigacion(codigo_grupo) ON DELETE SET NULL,
     area_academica       VARCHAR(100),
     anio_convocatoria    INT,
+    fecha_inicio         DATE,         -- Fecha de RR / inicio actividades
     fecha_rendicion_35   DATE,
     fecha_rendicion_70   DATE,
     fecha_rendicion_100  DATE,
@@ -160,6 +169,7 @@ CREATE TABLE proyecto (
                              'Concluido',    -- Todos los entregables aprobados (trigger automático)
                              'Cancelado'     -- Cierre administrativo anticipado
                          )),
+    observaciones        TEXT,         -- Ampliaciones, notas VRIP
     created_at           TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at           TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
@@ -285,7 +295,7 @@ CREATE TABLE log_auditoria (
     tipo_evento      VARCHAR(50)  NOT NULL CHECK (tipo_evento IN (
                          'INSERT', 'UPDATE', 'DELETE',
                          'LOGIN', 'LOGOUT',
-                         'IMPORT_EXCEL', 'SYNC_RENACYT', 'SYNC_CYBERTESIS',
+                         'IMPORT_EXCEL', 'IMPORT_EXCEL_CI', 'SYNC_RENACYT', 'SYNC_CYBERTESIS',
                          'SYNC_VRIP', 'EXPORT_REPORT', 'SNAPSHOT_GENERADO',
                          'CONFIG_CHANGE', 'USER_CREATED', 'USER_DEACTIVATED'
                      )),

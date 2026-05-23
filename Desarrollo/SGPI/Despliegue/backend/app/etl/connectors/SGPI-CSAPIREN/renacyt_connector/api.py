@@ -166,8 +166,12 @@ class RenacytConnector:
         for reg in reglamentos:
             endpoint = f"actoRegistral/obtenerActosRegistralesActivos/reglamento/{reg}/pagina/{page}/numeroRegistros/{page_size}"
             try:
-                raw_res = self._request(endpoint, method="POST", payload=criteria)
-                break  # Success!
+                temp_res = self._request(endpoint, method="POST", payload=criteria)
+                if temp_res and temp_res.get("data") and len(temp_res.get("data")) > 0:
+                    raw_res = temp_res
+                    break  # Data real encontrada
+                elif temp_res and raw_res is None:
+                    raw_res = temp_res # Guardamos la respuesta vacía por si nadie tiene datos
             except RenacytAPIError as e:
                 last_error = e
                 if "404" in str(e):

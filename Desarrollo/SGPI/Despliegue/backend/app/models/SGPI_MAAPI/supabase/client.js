@@ -10,7 +10,7 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    '❌ Faltan variables de entorno.\n' +
+    'Faltan variables de entorno.\n' +
     'Asegúrate de tener SUPABASE_URL y SUPABASE_ANON_KEY en tu archivo .env'
   )
 }
@@ -21,5 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 })
 
-console.log('✅ Cliente Supabase inicializado correctamente.')
-console.log(`   → URL: ${supabaseUrl}`)
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Cliente Supabase inicializado correctamente.')
+  console.log(`   → URL: ${supabaseUrl}`)
+}
