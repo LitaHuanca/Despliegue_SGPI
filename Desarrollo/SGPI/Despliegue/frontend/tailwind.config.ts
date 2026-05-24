@@ -79,9 +79,9 @@ const config: Config = {
 
       // ── Tipografía ───────────────────────────────────────────────────────────
       fontFamily: {
-        sans:    ['Inter', 'system-ui', 'sans-serif'],
-        heading: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        mono:    ['"JetBrains Mono"', 'Menlo', 'Consolas', 'monospace'],
+        sans:    ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'system-ui', 'sans-serif'],
+        mono:    ['var(--font-mono)', 'Menlo', 'Consolas', 'monospace'],
       },
       fontSize: {
         'h1':         ['30px', { lineHeight: '38px', letterSpacing: '-0.02em', fontWeight: '600' }],

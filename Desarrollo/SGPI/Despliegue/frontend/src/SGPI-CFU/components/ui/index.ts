@@ -11,6 +11,7 @@ export { Input,
          Textarea,
          Select }     from './Input';
 export { Toast }      from './Toast';
+export { Modal }      from './Modal';
 
 export type { ButtonProps, ButtonVariant, ButtonSize }     from './Button';
 export type { BadgeProps, BadgeVariant, BadgeSize }       from './Badge';
