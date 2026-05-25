@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/hooks/useAuth';
+// import { useAuth } from '@/lib/hooks/useAuth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Íconos
@@ -104,7 +104,11 @@ export interface TopBarProps {
 
 export function TopBar({ title, subtitle }: TopBarProps) {
   const pathname = usePathname();
-  const { user, showExpiryWarning, minutesRemaining, dismissWarning } = useAuth();
+  // const { user, showExpiryWarning, minutesRemaining, dismissWarning } = useAuth();
+  const user = { name: "Ana Mendoza", role: "Admin Vicedecanato" };
+  const showExpiryWarning = false;
+  const minutesRemaining = 0;
+  const dismissWarning = () => {};
   const breadcrumbs = parseBreadcrumbs(pathname);
   const currentLabel = title ?? breadcrumbs[breadcrumbs.length - 1]?.label ?? 'SGPI';
 
