@@ -129,8 +129,12 @@ class EtlProcessor:
                             dni=dni,
                             nombres=str(match.get('nombres', '')).title(),
                             apellidos=f"{match.get('apellido_paterno', '')} {match.get('apellido_materno', '')}".title(),
+                            institucion_principal=str(match.get('institucion_laboral_principal', '')),
                             codigo_renacyt=str(match.get('codigo_registro', '')),
+                            orcid=str(match.get('orcid', '')),
                             categoria_renacyt=str(match.get('nivel', 'No Clasificado')),
+                            estado_renacyt=str(match.get('condicion', '')),
+                            url_cti_vitae=str(match.get('cti_vitae', '')),
                             investigador_sm=is_sm
                         )
                         investigadores_validos.append(inv.model_dump())
@@ -252,6 +256,13 @@ class EtlProcessor:
                 "publicaciones": len(publicaciones_validas),
                 "tesis": len(tesis_validas),
                 "grupos": len(grupos_validos)
+            },
+            "detalle_extraccion": {
+                "investigadores": investigadores_validos,
+                "proyectos": proyectos_validos,
+                "publicaciones": publicaciones_validas,
+                "tesis": tesis_validas,
+                "grupos": grupos_validos
             },
             "resultados_db": resultados_db,
             "conflictos_inconsistencias": len(self.failed_rows),

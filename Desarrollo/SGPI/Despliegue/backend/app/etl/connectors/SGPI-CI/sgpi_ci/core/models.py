@@ -9,8 +9,12 @@ class InvestigadorModel(BaseModel):
     condicion_laboral: Optional[str] = Field("No Especificado")
     departamento_academico: Optional[str] = Field("No Especificado")
     grado_academico_max: Optional[str] = Field(None)
+    institucion_principal: Optional[str] = Field(None)
     codigo_renacyt: Optional[str] = Field(None)
+    orcid: Optional[str] = Field(None)
     categoria_renacyt: Optional[str] = Field("No Clasificado")
+    estado_renacyt: Optional[str] = Field(None)
+    url_cti_vitae: Optional[str] = Field(None)
     investigador_sm: bool = Field(False)
     estado_vigencia: str = Field("Activo")
     
