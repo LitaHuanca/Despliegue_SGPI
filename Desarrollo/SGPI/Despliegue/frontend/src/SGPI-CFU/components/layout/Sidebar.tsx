@@ -174,9 +174,9 @@ const NAV_ITEMS: NavItem[] = [
   {
     id:             'config',
     label:          'Configuración',
-    href:           '/SGPI-CFSA/Gestión_de_Cuentas_Activas',
+    href:           '/SGPI-CFSA/Gestion_de_Cuentas_Activas',
     icon:           ConfigIcon,
-    matchPrefixes:  ['/SGPI-CFSA'],
+    matchPrefixes:  ['/SGPI-CFSA/Gestion_de_Cuentas_Activas'],
     roles:          ['admin'],
   },
   {
@@ -233,11 +233,12 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['admin', 'secretary', 'chief'],
   },
   {
-    id:    'audit',
-    label: 'Auditoría de Logs',
-    href:  '/audit',
-    icon:  AuditIcon,
-    roles: ['admin'],
+    id:             'audit',
+    label:          'Auditoría de Logs',
+    href:           '/SGPI-CFSA/Modulo_de_auditoria',
+    icon:           AuditIcon,
+    matchPrefixes:  ['/SGPI-CFSA/Modulo_de_auditoria'],
+    roles:          ['admin'],
   },
 ];
 
@@ -258,10 +259,11 @@ export function Sidebar() {
 
   /** Determina si un item está activo considerando sus prefijos */
   const isItemActive = (item: NavItem): boolean => {
+    const decodedPath = decodeURIComponent(pathname);
     if (item.matchPrefixes) {
-      return item.matchPrefixes.some((prefix) => pathname.startsWith(prefix));
+      return item.matchPrefixes.some((prefix) => decodedPath.startsWith(prefix));
     }
-    return pathname === item.href || pathname.startsWith(`${item.href}/`);
+    return decodedPath === item.href || decodedPath.startsWith(`${item.href}/`);
   };
 
   const handleLogout = async () => {

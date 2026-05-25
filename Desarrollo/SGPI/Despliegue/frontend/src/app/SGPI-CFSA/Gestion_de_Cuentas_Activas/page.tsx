@@ -17,7 +17,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { MainLayout }                               from '@/SGPI-CFU/components/layout';
-import { Button, Badge, Modal, Input, Select }    from '@/SGPI-CFU/components/ui';
+import { Button, Badge, Modal, Input, Select, Toast } from '@/SGPI-CFU/components/ui';
 // import { useAuth }                               from '@/SGPI-CFU/lib/hooks';
 import { canDo }                                    from '@/SGPI-CFU/lib/auth/permissions';
 import type { User }                                from '@/SGPI-CFU/lib/types/models';
@@ -157,10 +157,61 @@ function PlusIcon() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Subcomponente: Sección Parámetros de Operación (placeholder)
+// Valores iniciales de los Parámetros de Operación
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ParametrosOperacion() {
+const INITIAL_PARAMS = {
+  frecuencia:     '12',
+  alertaRoja:     '3',
+  alertaAmarilla: '7',
+};
+
+type ParamKey = keyof typeof INITIAL_PARAMS;
+type ParamState = Record<ParamKey, string>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subcomponente: Sección Parámetros de Operación
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ParametrosOperacionProps {
+  /** Callback que se dispara cuando el usuario guarda exitosamente */
+  onSaved: () => void;
+}
+
+function ParametrosOperacion({ onSaved }: ParametrosOperacionProps) {
+  // Estado de cada campo editable
+  const [params, setParams] = useState<ParamState>({ ...INITIAL_PARAMS });
+
+  // Último estado confirmado (tras "Aplicar Cambios" o estado inicial)
+  const [savedParams, setSavedParams] = useState<ParamState>({ ...INITIAL_PARAMS });
+
+  // Hay cambios pendientes si cualquier campo difiere del guardado
+  const hasChanges =
+    params.frecuencia     !== savedParams.frecuencia     ||
+    params.alertaRoja     !== savedParams.alertaRoja     ||
+    params.alertaAmarilla !== savedParams.alertaAmarilla;
+
+  // Actualiza el campo correspondiente en el estado
+  const handleChange = (key: ParamKey) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setParams((prev) => ({ ...prev, [key]: e.target.value }));
+  };
+
+  // Guardar cambios → persiste el estado y notifica al padre
+  const handleAplicar = () => {
+    if (!hasChanges) return;
+    // TODO: llamar API cuando el backend esté disponible
+    setSavedParams({ ...params });
+    onSaved();
+  };
+
+  const SaveIcon = (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+  );
+
   return (
     <div className="flex flex-col">
       {/* ── Cabecera ────────────────────────────────────────────────────── */}
@@ -172,37 +223,50 @@ function ParametrosOperacion() {
           </svg>
           <h2 className="font-sans font-bold text-[15px]">Configuración Global</h2>
         </div>
-        <Button variant="secondary" size="sm" disabled iconLeft={
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
-          </svg>
-        }>
+
+        {/*
+          Botón "Aplicar Cambios":
+          · Sin cambios → variant="secondary" + disabled (estilo bloqueado: gris, cursor-not-allowed)
+          · Con cambios  → variant="primary"  (navy sólido, totalmente activo, hover habilitado)
+        */}
+        <Button
+          id="btn-aplicar-cambios"
+          variant={hasChanges ? 'primary' : 'secondary'}
+          size="sm"
+          disabled={!hasChanges}
+          iconLeft={SaveIcon}
+          onClick={handleAplicar}
+        >
           Aplicar Cambios
         </Button>
       </div>
 
       {/* ── Inputs primera sección ────────────────────────────────────────── */}
       <div className="flex gap-8 mb-6">
-        {/* URL Base Scraping */}
+        {/* URL Base Scraping (solo lectura) */}
         <div className="flex flex-col gap-1.5 flex-1 max-w-[340px]">
           <label className="font-sans font-bold text-[12px] text-[#0f172a]">
             URL Base Scraping (VRIP)
           </label>
-          <Input 
-            defaultValue="https://vrip.unmsm.edu.pe/convocatorias" 
-            disabled 
+          <Input
+            id="param-url-base"
+            defaultValue="https://vrip.unmsm.edu.pe/convocatorias"
+            disabled
           />
         </div>
 
-        {/* Frecuencia */}
+        {/* Frecuencia (editable → detecta cambios) */}
         <div className="flex flex-col gap-1.5">
-          <label className="font-sans font-bold text-[12px] text-[#0f172a]">
+          <label htmlFor="param-frecuencia" className="font-sans font-bold text-[12px] text-[#0f172a]">
             Frecuencia de Sincronización
           </label>
           <div className="flex items-center gap-2">
-            <Input defaultValue="12" className="w-[60px] text-center" />
+            <Input
+              id="param-frecuencia"
+              value={params.frecuencia}
+              onChange={handleChange('frecuencia')}
+              className="w-[60px] text-center"
+            />
             <span className="font-sans text-[13px] text-[#64748b]">Horas</span>
           </div>
         </div>
@@ -215,28 +279,38 @@ function ParametrosOperacion() {
         <h3 className="font-sans font-bold text-[13px] text-[#0f172a]">
           Umbrales de Semaforización (Alertas)
         </h3>
-        
+
         <div className="flex gap-6 mt-1">
-          {/* Alerta Roja */}
+          {/* Alerta Roja (editable → detecta cambios) */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-sans font-bold text-[11px] text-[#dc2626]">
+            <label
+              htmlFor="param-alerta-roja"
+              className="font-sans font-bold text-[11px] text-[#dc2626]"
+            >
               Alerta Roja (Días &lt;=)
             </label>
-            <input 
-              type="text" 
-              defaultValue="3" 
+            <input
+              id="param-alerta-roja"
+              type="text"
+              value={params.alertaRoja}
+              onChange={handleChange('alertaRoja')}
               className="w-40 px-3 py-1.5 font-sans font-medium text-[13px] text-[#dc2626] bg-white border border-[#fca5a5] rounded outline-none focus:ring-2 focus:ring-[#fecaca] transition-all"
             />
           </div>
 
-          {/* Alerta Amarilla */}
+          {/* Alerta Amarilla (editable → detecta cambios) */}
           <div className="flex flex-col gap-1.5">
-            <label className="font-sans font-bold text-[11px] text-[#d97706]">
+            <label
+              htmlFor="param-alerta-amarilla"
+              className="font-sans font-bold text-[11px] text-[#d97706]"
+            >
               Alerta Amarilla (Días &lt;=)
             </label>
-            <input 
-              type="text" 
-              defaultValue="7" 
+            <input
+              id="param-alerta-amarilla"
+              type="text"
+              value={params.alertaAmarilla}
+              onChange={handleChange('alertaAmarilla')}
               className="w-40 px-3 py-1.5 font-sans font-medium text-[13px] text-[#d97706] bg-white border border-[#fcd34d] rounded outline-none focus:ring-2 focus:ring-[#fde68a] transition-all"
             />
           </div>
@@ -245,6 +319,7 @@ function ParametrosOperacion() {
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Página principal
@@ -256,6 +331,44 @@ export default function GestionDeCuentasActivasPage() {
   const [users, setUsers]         = useState<User[]>(MOCK_USERS);
   const [errorMsg, setErrorMsg]   = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newUserNombre, setNewUserNombre] = useState('');
+  const [newUserEmail,  setNewUserEmail]  = useState('');
+
+  // Resetea los campos al cerrar el modal
+  const handleCloseModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+    setNewUserNombre('');
+    setNewUserEmail('');
+  }, []);
+
+  const canGuardarUsuario = newUserNombre.trim() !== '' && newUserEmail.trim() !== '';
+
+  // ── Toast de éxito (mensaje dinámico; null = oculto) ─────────────────────
+  const [toast, setToast] = useState<{ title: string; description?: string } | null>(null);
+
+  const showToast = useCallback((title: string, description?: string) => {
+    setToast({ title, description });
+  }, []);
+
+  const handleParamsSaved = useCallback(() => {
+    showToast(
+      'Configuración global actualizada exitosamente.',
+      'Los cambios aplicarán en la próxima ejecución.',
+    );
+  }, [showToast]);
+
+  const handleUsuarioCreado = useCallback(() => {
+    showToast('Usuario nuevo creado exitosamente.');
+  }, [showToast]);
+
+  // Auto-cierra el Toast después de 4 s
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+
 
   const puedeGestionar = user ? canDo(user.role, 'MANAGE_USERS') : false;
 
@@ -394,22 +507,23 @@ export default function GestionDeCuentasActivasPage() {
 
             {/* Cabecera de la tarjeta */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant">
+
               <h2 className="font-heading font-semibold text-h3 text-on-surface">
                 Listado de Usuarios
               </h2>
 
               {/* Botón Crear — visible solo si puedeGestionar */}
               {puedeGestionar && (
-                <Button
-                  id="btn-crear-usuario"
-                  variant="primary"
-                  size="md"
-                  iconLeft={<PlusIcon />}
-                  onClick={handleCrearUsuario}
-                >
-                  Crear Nuevo Usuario
-                </Button>
-              )}
+                  <Button
+                    id="btn-crear-usuario"
+                    variant="primary"
+                    size="md"
+                    iconLeft={<PlusIcon />}
+                    onClick={handleCrearUsuario}
+                  >
+                    Crear Nuevo Usuario
+                  </Button>
+                )}
             </div>
 
             {/* Tabla */}
@@ -587,7 +701,7 @@ export default function GestionDeCuentasActivasPage() {
           className="mt-6"
         >
           <div className="bg-surface-container-lowest rounded border border-outline-variant shadow-level-1 p-6">
-            <ParametrosOperacion />
+            <ParametrosOperacion onSaved={handleParamsSaved} />
           </div>
         </section>
       )}
@@ -595,17 +709,22 @@ export default function GestionDeCuentasActivasPage() {
       {/* ── Modal: Crear Nuevo Usuario ────────────────────────────────────── */}
       <Modal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={handleCloseModal}
         title="Crear Nuevo Usuario"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
+            <Button variant="secondary" onClick={handleCloseModal}>
               Cancelar
             </Button>
-            <Button variant="primary" onClick={() => {
-              // TODO: lógica para guardar el usuario (llamar API)
-              setIsCreateModalOpen(false);
-            }}>
+            <Button
+              variant={canGuardarUsuario ? 'primary' : 'secondary'}
+              disabled={!canGuardarUsuario}
+              onClick={() => {
+                // TODO: lógica para guardar el usuario (llamar API)
+                handleCloseModal();
+                handleUsuarioCreado();
+              }}
+            >
               Guardar Usuario
             </Button>
           </>
@@ -616,14 +735,24 @@ export default function GestionDeCuentasActivasPage() {
             <label htmlFor="nombre" className="font-sans font-bold text-[13px] text-[#0f172a]">
               Nombre Completo
             </label>
-            <Input id="nombre" placeholder="Ej. Ana García" />
+            <Input
+              id="nombre"
+              placeholder="Ej. Ana García"
+              value={newUserNombre}
+              onChange={(e) => setNewUserNombre(e.target.value)}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="email" className="font-sans font-bold text-[13px] text-[#0f172a]">
               Correo Institucional (UNMSM) *
             </label>
-            <Input id="email" placeholder="usuario@unmsm.edu.pe" />
+            <Input
+              id="email"
+              placeholder="usuario@unmsm.edu.pe"
+              value={newUserEmail}
+              onChange={(e) => setNewUserEmail(e.target.value)}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -639,6 +768,21 @@ export default function GestionDeCuentasActivasPage() {
           </div>
         </div>
       </Modal>
+
+
+      {/* ── Toast de éxito (mensaje dinámico) ────────────────────────────── */}
+      {toast && (
+        <div
+          aria-live="polite"
+          className="fixed bottom-6 right-6 z-50"
+        >
+          <Toast
+            variant="success"
+            title={toast.title}
+            description={toast.description}
+          />
+        </div>
+      )}
     </MainLayout>
   );
 }

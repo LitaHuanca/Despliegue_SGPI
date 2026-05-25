@@ -161,7 +161,7 @@ export function useAsyncJob(statusFetcher: StatusFetcher) {
               ...prev,
               isRunning: false,
               isSuccess: false,
-              error:     'El proceso falló. Por favor, revise los datos e intente nuevamente.',
+              error:     (result as any).error || 'El proceso falló. Por favor, revise los datos e intente nuevamente.',
             }));
           }
         }

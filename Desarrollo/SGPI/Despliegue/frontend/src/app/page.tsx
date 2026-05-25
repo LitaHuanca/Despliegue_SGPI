@@ -1,4 +1,4 @@
-import GestionDeCuentasActivasPage from './SGPI-CFSA/Gestión_de_Cuentas_Activas/page';
+import GestionDeCuentasActivasPage from './SGPI-CFSA/Gestion_de_Cuentas_Activas/page';
 
 export default function Home() {
   return <GestionDeCuentasActivasPage />;
