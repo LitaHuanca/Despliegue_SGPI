@@ -213,11 +213,12 @@ const NAV_ITEMS: NavItem[] = [
     roles:          ['admin', 'secretary'],
   },
   {
-    id:    'calls',
-    label: 'Alertas Convocatorias',
-    href:  '/calls',
-    icon:  BellIcon,
-    roles: ['admin', 'secretary', 'chief'],
+    id:             'calls',
+    label:          'Alertas Convocatorias',
+    href:           '/calls',
+    icon:           BellIcon,
+    matchPrefixes:  ['/calls', '/SGPI-CFAC'],
+    roles:          ['admin', 'secretary', 'chief'],
   },
   {
     id:    'publications',
