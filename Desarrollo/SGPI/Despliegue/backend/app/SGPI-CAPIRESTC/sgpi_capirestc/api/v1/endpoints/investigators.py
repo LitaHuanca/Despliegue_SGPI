@@ -18,7 +18,7 @@ async def list_investigadores(skip: int = 0, limit: int = 100, db: AsyncSession 
 async def get_investigador(dni: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     inv = await investigador.get_by_dni(db, dni=dni)
     if not inv:
-        raise HTTPException(status_code=404, detail="Investigador not found")
+        raise HTTPException(status_code=404, detail="Investigador no encontrado")
     return inv
 
 @router.post("/", response_model=InvestigadorResponse)
@@ -43,7 +43,7 @@ async def create_investigador(obj_in: InvestigadorCreate, db: AsyncSession = Dep
 async def update_investigador(dni: str, obj_in: InvestigadorUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     inv = await investigador.get_by_dni(db, dni=dni)
     if not inv:
-        raise HTTPException(status_code=404, detail="Investigador not found")
+        raise HTTPException(status_code=404, detail="Investigador no encontrado")
         
     valor_anterior = {k: getattr(inv, k) for k in obj_in.model_dump(exclude_unset=True).keys()}
     

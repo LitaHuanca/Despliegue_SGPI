@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, Text, ForeignKey, Numeric, JSON, Date
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -186,3 +187,37 @@ class Tesis(Base):
     palabras_clave = Column(JSON)
     jurados_evaluadores = Column(JSON)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+class ProyectoEstadoHistorial(Base):
+    __tablename__ = 'proyecto_estado_historial'
+    id_historial = Column(Integer, primary_key=True, index=True)
+    codigo_proyecto = Column(String(50), ForeignKey('proyecto.codigo_proyecto', ondelete='CASCADE'))
+    estado_anterior = Column(String(50))
+    estado_nuevo = Column(String(50), nullable=False)
+    justificacion = Column(Text, nullable=False)
+    id_usuario_responsable = Column(UUID(as_uuid=True), ForeignKey('usuario.id_usuario', ondelete='SET NULL'))
+    fecha_cambio = Column(DateTime(timezone=True), server_default=text('now()'))
+
+class EvidenciaDifusion(Base):
+    __tablename__ = 'evidencia_difusion'
+    id_evidencia = Column(Integer, primary_key=True, index=True)
+    id_convocatoria = Column(Integer, ForeignKey('convocatoria.id_convocatoria', ondelete='CASCADE'))
+    tipo_evidencia = Column(String(100))
+    nombre_archivo = Column(String(255), nullable=False)
+    url_archivo = Column(String(255), nullable=False)
+    id_usuario_carga = Column(UUID(as_uuid=True), ForeignKey('usuario.id_usuario', ondelete='SET NULL'))
+    fecha_carga = Column(DateTime(timezone=True), server_default=text('now()'))
+
+class ReconciliacionPendiente(Base):
+    __tablename__ = 'reconciliacion_pendientes'
+    id_pendiente = Column(Integer, primary_key=True, autoincrement=True)
+    entidad_afectada = Column(String(50), nullable=False) # e.g., investigador, proyecto
+    llave_primaria_sugerida = Column(String(100)) # e.g., DNI, DOI
+    fuentes_involucradas = Column(JSON, nullable=False) # ej. ["RAIS", "RENACYT"]
+    datos_conflicto = Column(JSON, nullable=False) # payload completo con la diferencia
+    motivo_cuarentena = Column(Text, nullable=False) # por qué no se reconcilió
+    estado = Column(String(50), default='Pendiente') # Pendiente, Aprobado, Rechazado
+    id_usuario_revisor = Column(UUID(as_uuid=True), ForeignKey('usuario.id_usuario', ondelete='SET NULL'))
+    fecha_registro = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    fecha_revision = Column(DateTime(timezone=True))
+

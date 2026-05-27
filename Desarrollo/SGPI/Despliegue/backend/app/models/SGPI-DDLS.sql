@@ -381,3 +381,24 @@ CREATE INDEX idx_log_usuario             ON log_auditoria(id_usuario);
 CREATE INDEX idx_log_timestamp           ON log_auditoria(timestamp_evento DESC);
 CREATE INDEX idx_log_entidad             ON log_auditoria(entidad_afectada, pk_entidad);  -- typo corregido
 
+-- ------------------------------------------------------------------------------------
+-- SECCIÓN 6: MÓDULO DE RECONCILIACIÓN Y NORMALIZACIÓN (MRN)
+-- ------------------------------------------------------------------------------------
+
+-- 17. Tabla de Cuarentena para Conflictos de Reconciliación
+--     Almacena temporalmente registros ambiguos procedentes del pipeline ETL
+--     hasta que el administrador de datos los valide manualmente.
+CREATE TABLE reconciliacion_pendientes (
+    id_pendiente SERIAL PRIMARY KEY,
+    entidad_afectada VARCHAR(50) NOT NULL,
+    llave_primaria_sugerida VARCHAR(100),
+    fuentes_involucradas JSONB NOT NULL,
+    datos_conflicto JSONB NOT NULL,
+    motivo_cuarentena TEXT NOT NULL,
+    estado VARCHAR(50) DEFAULT 'Pendiente' CHECK (estado IN ('Pendiente', 'Aprobado', 'Rechazado')),
+    id_usuario_revisor UUID REFERENCES usuario(id_usuario) ON DELETE SET NULL,
+    fecha_registro TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),
+    fecha_revision TIMESTAMPTZ
+);
+
+COMMENT ON TABLE reconciliacion_pendientes IS 'Tabla de staging para registros conflictivos detectados por el MRN antes de su persistencia en las tablas maestras.';

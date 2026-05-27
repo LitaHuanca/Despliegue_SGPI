@@ -4,9 +4,9 @@ from typing import List
 
 from app.db.session import get_db
 from sgpi_capirestc.crud.crud_proyecto import proyecto
-from app.models.domain import Entregable, InvestigadorProyecto
-from sgpi_capirestc.schemas.domain_schemas import ProyectoCreate, ProyectoUpdate, ProyectoResponse, EntregableCreate, EntregableResponse, InvestigadorProyectoCreate, InvestigadorProyectoResponse
-from app.core.security import get_current_user
+from app.models.domain import Entregable, InvestigadorProyecto, ProyectoEstadoHistorial
+from sgpi_capirestc.schemas.domain_schemas import ProyectoCreate, ProyectoUpdate, ProyectoResponse, EntregableCreate, EntregableResponse, InvestigadorProyectoCreate, InvestigadorProyectoResponse, ProyectoEstadoUpdate
+from app.core.security import get_current_user, require_admin
 from app.core.audit import log_audit_event
 
 router = APIRouter()
@@ -19,7 +19,7 @@ async def list_proyectos(skip: int = 0, limit: int = 100, db: AsyncSession = Dep
 async def get_proyecto(codigo: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await proyecto.get_by_codigo(db, codigo=codigo)
     if not p:
-        raise HTTPException(status_code=404, detail="Proyecto not found")
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
     return p
 
 @router.post("/", response_model=ProyectoResponse)
@@ -44,7 +44,7 @@ async def create_proyecto(obj_in: ProyectoCreate, db: AsyncSession = Depends(get
 async def update_proyecto(codigo: str, obj_in: ProyectoUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await proyecto.get_by_codigo(db, codigo=codigo)
     if not p:
-        raise HTTPException(status_code=404, detail="Proyecto not found")
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
         
     valor_anterior = {k: getattr(p, k) for k in obj_in.model_dump(exclude_unset=True).keys()}
     
@@ -65,7 +65,7 @@ async def update_proyecto(codigo: str, obj_in: ProyectoUpdate, db: AsyncSession 
 async def create_deliverable(codigo: str, obj_in: EntregableCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await proyecto.get_by_codigo(db, codigo=codigo)
     if not p:
-        raise HTTPException(status_code=404, detail="Proyecto not found")
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
         
     db_obj = Entregable(**obj_in.model_dump())
     db_obj.codigo_proyecto = codigo
@@ -87,7 +87,7 @@ async def create_deliverable(codigo: str, obj_in: EntregableCreate, db: AsyncSes
 async def add_investigator(codigo: str, obj_in: InvestigadorProyectoCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await proyecto.get_by_codigo(db, codigo=codigo)
     if not p:
-        raise HTTPException(status_code=404, detail="Proyecto not found")
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
         
     db_obj = InvestigadorProyecto(**obj_in.model_dump())
     db_obj.codigo_proyecto = codigo
@@ -105,3 +105,35 @@ async def add_investigator(codigo: str, obj_in: InvestigadorProyectoCreate, db: 
     )
     return db_obj
 
+@router.patch("/{codigo}/status", response_model=ProyectoResponse, dependencies=[Depends(require_admin)])
+async def update_proyecto_status(codigo: str, obj_in: ProyectoEstadoUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    p = await proyecto.get_by_codigo(db, codigo=codigo)
+    if not p:
+        raise HTTPException(status_code=404, detail="Proyecto no encontrado")
+        
+    estado_anterior = p.estado_proyecto
+    
+    # Update project state
+    updated_p = await proyecto.update(db, db_obj=p, obj_in={"estado_proyecto": obj_in.estado_proyecto})
+    
+    # Create history record
+    historial = ProyectoEstadoHistorial(
+        codigo_proyecto=codigo,
+        estado_anterior=estado_anterior,
+        estado_nuevo=obj_in.estado_proyecto,
+        justificacion=obj_in.justificacion,
+        id_usuario_responsable=current_user.get("sub")
+    )
+    db.add(historial)
+    await db.commit()
+    
+    await log_audit_event(
+        db=db,
+        tipo_evento="UPDATE",
+        entidad_afectada="proyecto",
+        pk_entidad=codigo,
+        valor_anterior={"estado_proyecto": estado_anterior},
+        valor_nuevo={"estado_proyecto": obj_in.estado_proyecto, "justificacion": obj_in.justificacion},
+        id_usuario=current_user.get("sub"),
+    )
+    return updated_p

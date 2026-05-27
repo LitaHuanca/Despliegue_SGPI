@@ -18,7 +18,7 @@ async def list_convocatorias(skip: int = 0, limit: int = 100, db: AsyncSession =
 async def get_convocatoria(id_convocatoria: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     c = await convocatoria.get(db, id=id_convocatoria)
     if not c:
-        raise HTTPException(status_code=404, detail="Convocatoria not found")
+        raise HTTPException(status_code=404, detail="Convocatoria no encontrado")
     return c
 
 @router.post("/", response_model=ConvocatoriaResponse)
@@ -39,7 +39,7 @@ async def create_convocatoria(obj_in: ConvocatoriaCreate, db: AsyncSession = Dep
 async def update_convocatoria(id_convocatoria: int, obj_in: ConvocatoriaUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     c = await convocatoria.get(db, id=id_convocatoria)
     if not c:
-        raise HTTPException(status_code=404, detail="Convocatoria not found")
+        raise HTTPException(status_code=404, detail="Convocatoria no encontrado")
         
     valor_anterior = {k: getattr(c, k) for k in obj_in.model_dump(exclude_unset=True).keys()}
     
@@ -55,3 +55,29 @@ async def update_convocatoria(id_convocatoria: int, obj_in: ConvocatoriaUpdate, 
         id_usuario=current_user.get("sub"),
     )
     return updated_c
+
+from app.models.domain import EvidenciaDifusion
+from sgpi_capirestc.schemas.domain_schemas import EvidenciaDifusionCreate, EvidenciaDifusionResponse
+
+@router.post("/{id_convocatoria}/evidence", response_model=EvidenciaDifusionResponse)
+async def upload_evidence(id_convocatoria: int, obj_in: EvidenciaDifusionCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    c = await convocatoria.get(db, id=id_convocatoria)
+    if not c:
+        raise HTTPException(status_code=404, detail="Convocatoria no encontrada")
+        
+    db_obj = EvidenciaDifusion(**obj_in.model_dump())
+    db_obj.id_convocatoria = id_convocatoria
+    db_obj.id_usuario_carga = current_user.get("sub")
+    db.add(db_obj)
+    await db.commit()
+    await db.refresh(db_obj)
+    
+    await log_audit_event(
+        db=db,
+        tipo_evento="INSERT",
+        entidad_afectada="evidencia_difusion",
+        pk_entidad=str(db_obj.id_evidencia),
+        valor_nuevo=obj_in.model_dump(mode='json'),
+        id_usuario=current_user.get("sub"),
+    )
+    return db_obj

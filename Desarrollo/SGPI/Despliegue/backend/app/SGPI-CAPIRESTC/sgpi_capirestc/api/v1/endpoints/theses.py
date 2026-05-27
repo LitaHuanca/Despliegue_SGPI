@@ -14,11 +14,11 @@ router = APIRouter()
 async def list_tesis(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return await tesis.get_multi(db, skip=skip, limit=limit)
 
-@router.get("/by-url", response_model=TesisResponse)
+@router.get("/{url:path}", response_model=TesisResponse)
 async def get_tesis(url: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     t = await tesis.get_by_url(db, url=url)
     if not t:
-        raise HTTPException(status_code=404, detail="Tesis not found")
+        raise HTTPException(status_code=404, detail="Tesis no encontrado")
     return t
 
 @router.post("/", response_model=TesisResponse)

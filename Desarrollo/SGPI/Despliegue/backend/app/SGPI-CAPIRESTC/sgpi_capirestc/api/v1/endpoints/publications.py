@@ -19,7 +19,7 @@ async def list_publicaciones(skip: int = 0, limit: int = 100, db: AsyncSession =
 async def get_publicacion(id_publicacion: int, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await publicacion.get(db, id=id_publicacion)
     if not p:
-        raise HTTPException(status_code=404, detail="Publicacion not found")
+        raise HTTPException(status_code=404, detail="Publicacion no encontrado")
     return p
 
 @router.post("/", response_model=PublicacionResponse)
@@ -40,7 +40,7 @@ async def create_publicacion(obj_in: PublicacionCreate, db: AsyncSession = Depen
 async def update_publicacion(id_publicacion: int, obj_in: PublicacionUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await publicacion.get(db, id=id_publicacion)
     if not p:
-        raise HTTPException(status_code=404, detail="Publicacion not found")
+        raise HTTPException(status_code=404, detail="Publicacion no encontrado")
         
     valor_anterior = {k: getattr(p, k) for k in obj_in.model_dump(exclude_unset=True).keys()}
     
@@ -61,7 +61,7 @@ async def update_publicacion(id_publicacion: int, obj_in: PublicacionUpdate, db:
 async def add_investigator(id_publicacion: int, obj_in: InvestigadorPublicacionCreate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     p = await publicacion.get(db, id=id_publicacion)
     if not p:
-        raise HTTPException(status_code=404, detail="Publicacion not found")
+        raise HTTPException(status_code=404, detail="Publicacion no encontrado")
         
     if id_publicacion != obj_in.id_publicacion:
         raise HTTPException(status_code=400, detail="Path id does not match body id")

@@ -18,7 +18,7 @@ async def list_grupos(skip: int = 0, limit: int = 100, db: AsyncSession = Depend
 async def get_grupo(codigo: str, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     g = await grupo.get_by_codigo(db, codigo=codigo)
     if not g:
-        raise HTTPException(status_code=404, detail="Grupo de Investigacion not found")
+        raise HTTPException(status_code=404, detail="Grupo de Investigacion no encontrado")
     return g
 
 @router.post("/", response_model=GrupoInvestigacionResponse)
@@ -43,7 +43,7 @@ async def create_grupo(obj_in: GrupoInvestigacionCreate, db: AsyncSession = Depe
 async def update_grupo(codigo: str, obj_in: GrupoInvestigacionUpdate, db: AsyncSession = Depends(get_db), current_user: dict = Depends(get_current_user)):
     g = await grupo.get_by_codigo(db, codigo=codigo)
     if not g:
-        raise HTTPException(status_code=404, detail="Grupo not found")
+        raise HTTPException(status_code=404, detail="Grupo no encontrado")
         
     valor_anterior = {k: getattr(g, k) for k in obj_in.model_dump(exclude_unset=True).keys()}
     

@@ -32,8 +32,6 @@ class InvestigadorUpdate(BaseModel):
     facultad_dependencia: Optional[str] = None
     grado_academico_max: Optional[str] = None
     institucion_principal: Optional[str] = None
-    codigo_renacyt: Optional[str] = None
-    orcid: Optional[str] = None
     categoria_renacyt: Optional[str] = None
     estado_renacyt: Optional[str] = None
     url_cti_vitae: Optional[str] = None
@@ -90,6 +88,9 @@ class UsuarioBase(BaseModel):
     rol_sistema: str
     estado_cuenta: Optional[bool] = True
 
+class UsuarioCreate(UsuarioBase):
+    pass
+
 class UsuarioUpdate(BaseModel):
     correo_institucional: Optional[str] = None
     rol_sistema: Optional[str] = None
@@ -128,8 +129,17 @@ class ProyectoUpdate(BaseModel):
     resolucion_aprobacion: Optional[str] = None
     titulo_proyecto: Optional[str] = None
     tipo_proyecto: Optional[str] = None
-    estado_proyecto: Optional[str] = None
     fecha_inicio: Optional[date] = None
+    fecha_rendicion_35: Optional[date] = None
+    fecha_rendicion_70: Optional[date] = None
+    fecha_rendicion_100: Optional[date] = None
+    fecha_informe_final: Optional[date] = None
+    presupuesto_asignado: Optional[float] = None
+    observaciones: Optional[str] = None
+
+class ProyectoEstadoUpdate(BaseModel):
+    estado_proyecto: str
+    justificacion: str
 
 class ProyectoResponse(ProyectoBase):
     created_at: datetime
@@ -159,6 +169,22 @@ class ConvocatoriaUpdate(BaseModel):
 class ConvocatoriaResponse(ConvocatoriaBase):
     id_convocatoria: int
     created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class EvidenciaDifusionBase(BaseModel):
+    id_convocatoria: int
+    tipo_evidencia: Optional[str] = None
+    nombre_archivo: str
+    url_archivo: str
+
+class EvidenciaDifusionCreate(EvidenciaDifusionBase):
+    pass
+
+class EvidenciaDifusionResponse(EvidenciaDifusionBase):
+    id_evidencia: int
+    fecha_carga: datetime
     
     class Config:
         from_attributes = True
