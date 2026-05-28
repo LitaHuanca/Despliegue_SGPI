@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Agrega la carpeta con guion medio al sys.path para que Python la reconozca
+# Agrega las carpetas al sys.path para que Python las reconozca
 sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CAPIRESTC"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CMR"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CRAPI"))
