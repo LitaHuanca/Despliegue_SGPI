@@ -2,124 +2,125 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/SGPI-CFU/lib/hooks/useAuth';
-import { validateLoginForm, isFormValid, type FormValidationResult, type LoginFields } from '@/SGPI-CFU/lib/utils/validators';
-import { Input, Button } from '@/SGPI-CFU/components/ui';
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, failedAttempts, lockedUntil } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [email, setEmail] = useState('admin@unmsm.edu.pe');
-  const [password, setPassword] = useState('Admin@1234');
-  
-  const [formErrors, setFormErrors] = useState<FormValidationResult<LoginFields>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setApiError(null);
-    
-    // Validar antes de llamar al backend
-    const errors = validateLoginForm({ email, password });
-    setFormErrors(errors);
-
-    if (!isFormValid(errors)) {
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      await login({ email, password });
-      // Redirección directa y forzada a SGPI-CFB
-      router.replace('/SGPI-CFB');
-    } catch (error: any) {
-      setApiError(error.message || 'Error al iniciar sesión. Por favor, intente nuevamente.');
-    } finally {
-      setIsLoading(false);
-    }
+    router.replace('/SGPI-CFB');
   };
 
-  const isLocked = lockedUntil !== null && lockedUntil > Date.now();
-
   return (
-    <div className="w-full max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg border border-slate-100">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-[#0f172a] mb-2">Iniciar Sesión</h1>
-        <p className="text-slate-500">
-          Ingrese sus credenciales para acceder al sistema
+    <div className="w-full max-w-md mx-auto px-8 py-8 bg-white rounded-xl shadow-lg border border-slate-100">
+
+      {/* Encabezado */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-14 h-14 rounded-xl bg-[#0f172a] flex items-center justify-center mb-4">
+          <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold text-[#0f172a] mb-0.5">SGPI</h1>
+        <p className="text-slate-500 text-sm text-center">
+          Sistema de Gestión de Proyectos de Investigación
         </p>
       </div>
 
-      {apiError && (
-        <div className="mb-6 p-4 rounded-md bg-red-50 border border-red-200 flex items-start gap-3 animate-in fade-in zoom-in-95">
-          <svg className="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-red-800">
-              {apiError}
-            </p>
-            {isLocked && (
-              <p className="text-xs text-red-600 mt-1">
-                La cuenta ha sido bloqueada temporalmente por seguridad debido a múltiples intentos fallidos.
-              </p>
-            )}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+        {/* Correo */}
+        <div className="flex flex-col gap-1">
+          <label htmlFor="email" className="text-[11px] font-bold tracking-widest uppercase text-slate-500">
+            Correo Institucional
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </span>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="investigador.fisi@unmsm.edu.pe"
+              className="w-full pl-9 pr-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded outline-none placeholder:text-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-colors"
+            />
           </div>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <div>
-          <Input
-            id="email"
-            type="email"
-            placeholder="ejemplo@unmsm.edu.pe"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={formErrors.email}
-            disabled={isLoading || isLocked}
-            label="Correo Institucional"
-            className="w-full"
-          />
-        </div>
-
-        <div>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            error={formErrors.password}
-            disabled={isLoading || isLocked}
-            label="Contraseña"
-            className="w-full"
-          />
-        </div>
-
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          className="w-full mt-4 font-bold"
-          disabled={isLoading || isLocked}
-        >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        {/* Contraseña */}
+        <div className="flex flex-col gap-1">
+          <label htmlFor="password" className="text-[11px] font-bold tracking-widest uppercase text-slate-500">
+            Contraseña
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              Procesando...
             </span>
-          ) : (
-            "Iniciar Sesión"
-          )}
-        </Button>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full pl-9 pr-10 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded outline-none placeholder:text-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Recordar dispositivo + ¿Olvidó su contraseña? */}
+        <div className="flex items-center justify-between mt-0.5">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input id="remember-device" type="checkbox" className="w-3.5 h-3.5 rounded border-slate-300 accent-[#0f172a] cursor-pointer" />
+            <span className="text-xs text-slate-600">Recordar dispositivo</span>
+          </label>
+          <a href="#" className="text-xs font-semibold text-[#1e3a6e] hover:underline">
+            ¿Olvidó su contraseña?
+          </a>
+        </div>
+
+        {/* Botón */}
+        <button
+          type="submit"
+          className="w-full mt-1 py-2.5 rounded-lg bg-[#0f172a] hover:bg-[#1e293b] text-white text-sm font-semibold transition-colors"
+        >
+          Iniciar Sesión
+        </button>
       </form>
+
+      {/* Footer */}
+      <p className="mt-6 text-center text-[11px] text-slate-400">
+        Soporte técnico de la FISI · Unidad de Investigación
+      </p>
     </div>
   );
 }

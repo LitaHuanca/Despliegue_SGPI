@@ -12,7 +12,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 // import { useAuth } from '../../lib/hooks/useAuth';
 import type { UserRole } from '../../lib/types/auth';
 
@@ -252,7 +252,8 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useMockAuth();
+  const router   = useRouter();
+  const { user } = useMockAuth();
 
   /** Filtra los items visibles según el rol del usuario */
   const visibleItems = NAV_ITEMS.filter((item) => {
@@ -270,8 +271,8 @@ export function Sidebar() {
     return decodedPath === item.href || decodedPath.startsWith(`${item.href}/`);
   };
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    router.push('/SGPI-CFIS/login');
   };
 
   return (
