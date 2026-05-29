@@ -33,27 +33,27 @@ import { DEPARTAMENTOS, NIVELES_RENACYT } from '../_data/mock';
 const BackIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 18 9 12 15 6"/>
+    <polyline points="15 18 9 12 15 6" />
   </svg>
 );
 const CheckSmall = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
+    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 const SaveIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-    <polyline points="17 21 17 13 7 13 7 21"/>
-    <polyline points="7 3 7 8 15 8"/>
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
   </svg>
 );
 const HistorialIcon = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
   </svg>
 );
 
@@ -65,8 +65,8 @@ const inputCls = (err?: boolean) =>
   `w-full px-3 py-2 font-sans text-[13px] text-on-surface border rounded outline-none
    focus:ring-2 transition-all
    ${err
-     ? 'border-[#dc2626] bg-[#fff5f5] focus:ring-[#fca5a5]'
-     : 'border-outline-variant focus:ring-[#a8c8fa] focus:border-primary'}`;
+    ? 'border-[#dc2626] bg-[#fff5f5] focus:ring-[#fca5a5]'
+    : 'border-outline-variant focus:ring-[#a8c8fa] focus:border-primary'}`;
 
 const selectCls =
   'w-full appearance-none pl-3 pr-8 py-2 font-sans text-[13px] text-on-surface border border-outline-variant rounded bg-surface-container-lowest outline-none focus:ring-2 focus:ring-[#a8c8fa] cursor-pointer transition-all';
@@ -74,7 +74,7 @@ const selectCls =
 const ChevronDown = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 12 15 18 9"/>
+    <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
@@ -126,7 +126,7 @@ function Toggle({ checked, onChange, id }: {
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200
         ${checked ? 'bg-[#16a34a]' : 'bg-[#d1d5db]'}`}>
       <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
-        ${checked ? 'translate-x-6' : 'translate-x-1'}`}/>
+        ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
     </button>
   );
 }
@@ -145,13 +145,13 @@ function AlertBanner({ message, type }: { message: string; type: 'error' | 'succ
       {type === 'error' ? (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
+          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       ) : (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 flex-shrink-0">
-          <polyline points="20 6 9 17 4 12"/>
+          <polyline points="20 6 9 17 4 12" />
         </svg>
       )}
       {message}
@@ -166,26 +166,26 @@ function AlertBanner({ message, type }: { message: string; type: 'error' | 'succ
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function DocentePerfilPage() {
-  const router  = useRouter();
-  const params  = useParams<{ id: string }>();
-  const id      = params?.id ?? '';
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const id = params?.id ?? '';
 
-  const [doc,         setDoc]         = useState<DocenteInvestigador | null>(null);
-  const [isLoading,   setIsLoading]   = useState(true);
-  const [notFound,    setNotFound]    = useState(false);
-  const [isSaving,    setIsSaving]    = useState(false);
-  const [alert,       setAlert]       = useState<{ msg: string; type: 'error'|'success' } | null>(null);
+  const [doc, setDoc] = useState<DocenteInvestigador | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [alert, setAlert] = useState<{ msg: string; type: 'error' | 'success' } | null>(null);
 
   // ── Campos del formulario ──────────────────────────────────────────────────
-  const [nombres,     setNombres]     = useState('');
-  const [apellidos,   setApellidos]   = useState('');
-  const [email,       setEmail]       = useState('');
-  const [departamento,setDepartamento]= useState('');
-  const [estado,      setEstado]      = useState<EstadoVigencia>('activo');
-  const [nivel,       setNivel]       = useState<NivelRenacyt>('Sin nivel');
-  const [esSM,        setEsSM]        = useState(false);
-  const [historial,   setHistorial]   = useState<{ anio: number; puntaje: string }[]>([]);
-  const [histErrors,  setHistErrors]  = useState<boolean[]>([]);
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [email, setEmail] = useState('');
+  const [departamento, setDepartamento] = useState('');
+  const [estado, setEstado] = useState<EstadoVigencia>('activo');
+  const [nivel, setNivel] = useState<NivelRenacyt>('Sin nivel');
+  const [esSM, setEsSM] = useState(false);
+  const [historial, setHistorial] = useState<{ anio: number; puntaje: string }[]>([]);
+  const [histErrors, setHistErrors] = useState<boolean[]>([]);
   const [fieldErrors, setFieldErrors] = useState<string[]>([]);
 
   // ── Cargar docente ─────────────────────────────────────────────────────────
@@ -235,10 +235,10 @@ export default function DocentePerfilPage() {
   // EX2: campos obligatorios
   const validateRequired = useCallback((): boolean => {
     const errs: string[] = [];
-    if (!nombres.trim())     errs.push('nombres');
-    if (!apellidos.trim())   errs.push('apellidos');
-    if (!email.trim())       errs.push('email');
-    if (!departamento)       errs.push('departamento');
+    if (!nombres.trim()) errs.push('nombres');
+    if (!apellidos.trim()) errs.push('apellidos');
+    if (!email.trim()) errs.push('email');
+    if (!departamento) errs.push('departamento');
     setFieldErrors(errs);
     if (errs.length > 0) {
       setAlert({ msg: 'Debe completar todos los campos obligatorios para guardar el perfil.', type: 'error' });
@@ -255,10 +255,10 @@ export default function DocentePerfilPage() {
     setIsSaving(true);
     try {
       await actualizarDocente(id, {
-        dni:           doc!.dni,
+        dni: doc!.dni,
         nombres, apellidos, email, departamento,
-        nivelRenacyt:  nivel,
-        condicionSM:   esSM ? 'SM' : 'No SM',
+        nivelRenacyt: nivel,
+        condicionSM: esSM ? 'SM' : 'No SM',
         estado,
         puntajeHistorico: historial.map((h) => ({
           anio: h.anio, puntaje: parseFloat(h.puntaje),
@@ -282,9 +282,9 @@ export default function DocentePerfilPage() {
     return (
       <MainLayout title="Sistema de Gestión de Proyectos de Investigación">
         <div className="animate-pulse flex flex-col gap-4 max-w-[820px]">
-          <div className="h-6 w-64 bg-surface-container-high rounded"/>
-          <div className="h-[200px] bg-surface-container-high rounded"/>
-          <div className="h-[120px] bg-surface-container-high rounded"/>
+          <div className="h-6 w-64 bg-surface-container-high rounded" />
+          <div className="h-[200px] bg-surface-container-high rounded" />
+          <div className="h-[120px] bg-surface-container-high rounded" />
         </div>
       </MainLayout>
     );
@@ -311,195 +311,199 @@ export default function DocentePerfilPage() {
 
       <div className="max-w-[860px] mx-auto w-full">
 
-      {/* ── Encabezado ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-5 gap-4">
-        <h1 className="font-heading font-semibold text-h1 text-on-surface">
-          Perfil de Docente/Investigador
-        </h1>
-        <button onClick={() => router.push('/SGPI-CFMH')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded font-sans font-semibold text-[13px] text-on-surface border border-outline-variant hover:bg-surface-container transition-colors"
-          aria-label="Volver al directorio">
-          <BackIcon /> Volver al directorio
-        </button>
-      </div>
+        {/* ── Encabezado ────────────────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between mb-5 gap-4">
+          <h1 className="font-heading font-semibold text-h1 text-on-surface">
+            Perfil de Docente/Investigador
+          </h1>
+          <button onClick={() => router.push('/SGPI-CFMH')}
+            className="flex items-center gap-1.5 px-4 py-2 rounded font-sans font-semibold text-[13px] text-on-surface border border-outline-variant hover:bg-surface-container transition-colors"
+            aria-label="Volver al directorio">
+            <BackIcon /> Volver al directorio
+          </button>
+        </div>
 
-      {alert && <AlertBanner message={alert.msg} type={alert.type} />}
+        {alert && <AlertBanner message={alert.msg} type={alert.type} />}
 
-      <div>
+        <div>
 
-        {/* ── 1. Información General ──────────────────────────────────────────── */}
-        <SectionCard title="1. Información General">
-          <div className="flex flex-col gap-4">
+          {/* ── 1. Información General ──────────────────────────────────────────── */}
+          <SectionCard title="1. Información General">
+            <div className="flex flex-col gap-4">
 
-            {/* DNI + Nombres */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* DNI + Nombres */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label text="DNI / Pasaporte" />
+                  <input type="text" value={doc.dni} readOnly
+                    className="w-full px-3 py-2 font-mono text-[13px] text-on-surface-variant border border-outline-variant rounded bg-surface-container-low outline-none cursor-not-allowed"
+                    aria-label="DNI (no editable)"
+                  />
+                  <p className="mt-1 flex items-center gap-1 font-sans text-[11px] text-[#16a34a]">
+                    <CheckSmall /> DNI verificado y único en el sistema.
+                  </p>
+                </div>
+                <div>
+                  <Label text="Nombres" required />
+                  <input type="text" value={nombres}
+                    onChange={(e) => setNombres(e.target.value)}
+                    className={inputCls(hasErr('nombres'))}
+                    aria-label="Nombres del docente"
+                    aria-invalid={hasErr('nombres')}
+                  />
+                </div>
+              </div>
+
+              {/* Apellidos + Departamento */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label text="Apellidos" required />
+                  <input type="text" value={apellidos}
+                    onChange={(e) => setApellidos(e.target.value)}
+                    className={inputCls(hasErr('apellidos'))}
+                    aria-label="Apellidos del docente"
+                    aria-invalid={hasErr('apellidos')}
+                  />
+                </div>
+                <div>
+                  <Label text="Departamento Académico" required />
+                  <SelectField id="departamento" value={departamento}
+                    onChange={setDepartamento}
+                    options={[
+                      { value: '', label: 'Seleccione...' },
+                      ...DEPARTAMENTOS.map((d) => ({ value: d, label: d })),
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Email + Estado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label text="Correo Institucional" required />
+                  <input type="email" value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={inputCls(hasErr('email'))}
+                    aria-label="Correo institucional"
+                    aria-invalid={hasErr('email')}
+                  />
+                </div>
+                <div>
+                  <Label text="Estado en el Sistema" />
+                  <SelectField id="estado" value={estado} onChange={(v) => setEstado(v as EstadoVigencia)}
+                    options={[
+                      { value: 'activo', label: 'Activo' },
+                      { value: 'inactivo', label: 'Inactivo' },
+                      { value: 'por_vencer', label: 'Por Vencer' },
+                    ]}
+                  />
+                </div>
+              </div>
+
+            </div>
+          </SectionCard>
+
+          {/* ── 2. Calificación Académica ───────────────────────────────────────── */}
+          <SectionCard title="2. Calificación Académica">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+
               <div>
-                <Label text="DNI / Pasaporte" />
-                <input type="text" value={doc.dni} readOnly
-                  className="w-full px-3 py-2 font-mono text-[13px] text-on-surface-variant border border-outline-variant rounded bg-surface-container-low outline-none cursor-not-allowed"
-                  aria-label="DNI (no editable)"
+                <Label text="Nivel Renacyt Actual" />
+                <SelectField id="nivel-renacyt" value={nivel}
+                  onChange={(v) => setNivel(v as NivelRenacyt)}
+                  options={NIVELES_RENACYT.map((n) => ({ value: n, label: n }))}
                 />
-                <p className="mt-1 flex items-center gap-1 font-sans text-[11px] text-[#16a34a]">
-                  <CheckSmall /> DNI verificado y único en el sistema.
+              </div>
+
+              <div>
+                <Label text="¿Es Investigador San Marcos (RR Nº 02127-R-17)?" />
+                <div className="flex items-center gap-3 mt-1">
+                  <Toggle id="toggle-sm" checked={esSM} onChange={setEsSM} />
+                  <span className="font-sans font-semibold text-[13px] text-on-surface">
+                    {esSM ? 'SÍ' : 'NO'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <Label text={`Puntaje Actual (${CURRENT_YEAR})`} />
+                <input type="text" readOnly
+                  value={`${parseFloat(puntajeActual || '0').toFixed(1)} puntos`}
+                  className="w-full px-3 py-2 font-mono text-[13px] text-on-surface border border-outline-variant rounded bg-surface-container-low outline-none cursor-not-allowed"
+                />
+              </div>
+
+            </div>
+          </SectionCard>
+
+          {/* ── 3. Historial de Producción ─────────────────────────────────────── */}
+          <div className="bg-surface-container-lowest border border-outline-variant rounded shadow-level-1 mb-[80px]">
+            <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
+              <div>
+                <h2 className="font-heading font-semibold text-[15px] text-on-surface">
+                  3. Historial de Producción (Últimos 7 Años)
+                </h2>
+                <p className="font-sans text-[11px] text-on-surface-variant mt-0.5">
+                  Registre o valide los puntajes anuales para mantener el seguimiento de la
+                  recategorización y carga no lectiva.
                 </p>
               </div>
-              <div>
-                <Label text="Nombres" required />
-                <input type="text" value={nombres}
-                  onChange={(e) => setNombres(e.target.value)}
-                  className={inputCls(hasErr('nombres'))}
-                  aria-label="Nombres del docente"
-                  aria-invalid={hasErr('nombres')}
-                />
-              </div>
+              <button
+                onClick={() => router.push(`/SGPI-CFMH/${id}/historial`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded font-sans font-semibold text-[12px] text-white bg-[#001631] hover:bg-[#002b54] transition-colors"
+                aria-label="Ver historial completo de proyectos del investigador"
+              >
+                <HistorialIcon /> Ver Historial de Proyectos
+              </button>
             </div>
-
-            {/* Apellidos + Departamento */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label text="Apellidos" required />
-                <input type="text" value={apellidos}
-                  onChange={(e) => setApellidos(e.target.value)}
-                  className={inputCls(hasErr('apellidos'))}
-                  aria-label="Apellidos del docente"
-                  aria-invalid={hasErr('apellidos')}
-                />
-              </div>
-              <div>
-                <Label text="Departamento Académico" required />
-                <SelectField id="departamento" value={departamento}
-                  onChange={setDepartamento}
-                  options={[
-                    { value: '', label: 'Seleccione...' },
-                    ...DEPARTAMENTOS.map((d) => ({ value: d, label: d })),
-                  ]}
-                />
-              </div>
-            </div>
-
-            {/* Email + Estado */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label text="Correo Institucional" required />
-                <input type="email" value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputCls(hasErr('email'))}
-                  aria-label="Correo institucional"
-                  aria-invalid={hasErr('email')}
-                />
-              </div>
-              <div>
-                <Label text="Estado en el Sistema" />
-                <SelectField id="estado" value={estado} onChange={(v) => setEstado(v as EstadoVigencia)}
-                  options={[
-                    { value: 'activo',     label: 'Activo' },
-                    { value: 'inactivo',   label: 'Inactivo' },
-                    { value: 'por_vencer', label: 'Por Vencer' },
-                  ]}
-                />
-              </div>
-            </div>
-
-          </div>
-        </SectionCard>
-
-        {/* ── 2. Calificación Académica ───────────────────────────────────────── */}
-        <SectionCard title="2. Calificación Académica">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-
-            <div>
-              <Label text="Nivel Renacyt Actual" />
-              <SelectField id="nivel-renacyt" value={nivel}
-                onChange={(v) => setNivel(v as NivelRenacyt)}
-                options={NIVELES_RENACYT.map((n) => ({ value: n, label: n }))}
-              />
-            </div>
-
-            <div>
-              <Label text="¿Es Investigador San Marcos (RR Nº 02127-R-17)?" />
-              <div className="flex items-center gap-3 mt-1">
-                <Toggle id="toggle-sm" checked={esSM} onChange={setEsSM} />
-                <span className="font-sans font-semibold text-[13px] text-on-surface">
-                  {esSM ? 'SÍ' : 'NO'}
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <Label text={`Puntaje Actual (${CURRENT_YEAR})`} />
-              <input type="text" readOnly
-                value={`${parseFloat(puntajeActual || '0').toFixed(1)} puntos`}
-                className="w-full px-3 py-2 font-mono text-[13px] text-on-surface border border-outline-variant rounded bg-surface-container-low outline-none cursor-not-allowed"
-              />
-            </div>
-
-          </div>
-        </SectionCard>
-
-        {/* ── 3. Historial de Producción ─────────────────────────────────────── */}
-        <div className="bg-surface-container-lowest border border-outline-variant rounded shadow-level-1 mb-[80px]">
-          <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
-            <div>
-              <h2 className="font-heading font-semibold text-[15px] text-on-surface">
-                3. Historial de Producción (Últimos 7 Años)
-              </h2>
-              <p className="font-sans text-[11px] text-on-surface-variant mt-0.5">
-                Registre o valide los puntajes anuales para mantener el seguimiento de la
-                recategorización y carga no lectiva.
-              </p>
-            </div>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded font-sans font-semibold text-[12px] text-on-surface border border-outline-variant hover:bg-surface-container transition-colors">
-              <HistorialIcon /> Ver Historial detallado
-            </button>
-          </div>
-          <div className="px-6 py-5">
-            <div className="flex gap-3 flex-wrap">
-              {historial.map((h, idx) => {
-                const isCurrent = h.anio === CURRENT_YEAR;
-                const hasError  = histErrors[idx];
-                return (
-                  <div key={h.anio} className="flex flex-col items-center gap-1.5">
-                    <span className="font-sans font-bold text-[10px] text-on-surface-variant uppercase">
-                      {h.anio}
-                    </span>
-                    <input
-                      type="number" min="0" max="100" step="0.1"
-                      value={h.puntaje}
-                      onChange={(e) => {
-                        const next = [...historial];
-                        next[idx] = { ...next[idx], puntaje: e.target.value };
-                        setHistorial(next);
-                        if (histErrors[idx]) {
-                          const ne = [...histErrors];
-                          ne[idx] = false;
-                          setHistErrors(ne);
-                        }
-                      }}
-                      aria-label={`Puntaje ${h.anio}`}
-                      aria-invalid={hasError}
-                      className={`
+            <div className="px-6 py-5">
+              <div className="flex gap-3 flex-wrap">
+                {historial.map((h, idx) => {
+                  const isCurrent = h.anio === CURRENT_YEAR;
+                  const hasError = histErrors[idx];
+                  return (
+                    <div key={h.anio} className="flex flex-col items-center gap-1.5">
+                      <span className="font-sans font-bold text-[10px] text-on-surface-variant uppercase">
+                        {h.anio}
+                      </span>
+                      <input
+                        type="number" min="0" max="100" step="0.1"
+                        value={h.puntaje}
+                        onChange={(e) => {
+                          const next = [...historial];
+                          next[idx] = { ...next[idx], puntaje: e.target.value };
+                          setHistorial(next);
+                          if (histErrors[idx]) {
+                            const ne = [...histErrors];
+                            ne[idx] = false;
+                            setHistErrors(ne);
+                          }
+                        }}
+                        aria-label={`Puntaje ${h.anio}`}
+                        aria-invalid={hasError}
+                        className={`
                         w-[68px] px-2 py-1.5 text-center font-mono text-[13px] rounded outline-none transition-all
                         focus:ring-2
                         ${isCurrent
-                          ? 'border-2 border-[#001631] text-[#001631] font-bold focus:ring-[#a8c8fa]'
-                          : hasError
-                            ? 'border border-[#dc2626] bg-[#fff5f5] focus:ring-[#fca5a5]'
-                            : 'border border-outline-variant focus:ring-[#a8c8fa]'}
+                            ? 'border-2 border-[#001631] text-[#001631] font-bold focus:ring-[#a8c8fa]'
+                            : hasError
+                              ? 'border border-[#dc2626] bg-[#fff5f5] focus:ring-[#fca5a5]'
+                              : 'border border-outline-variant focus:ring-[#a8c8fa]'}
                       `}
-                    />
-                  </div>
-                );
-              })}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {histErrors.some(Boolean) && (
+                <p className="mt-3 font-sans text-[11px] text-[#dc2626]">
+                  Formato de puntaje inválido. Los valores deben ser numéricos entre 0 y 100.
+                </p>
+              )}
             </div>
-            {histErrors.some(Boolean) && (
-              <p className="mt-3 font-sans text-[11px] text-[#dc2626]">
-                Formato de puntaje inválido. Los valores deben ser numéricos entre 0 y 100.
-              </p>
-            )}
           </div>
-        </div>
 
-      </div>
+        </div>
 
       </div>
 
@@ -517,7 +521,7 @@ export default function DocentePerfilPage() {
             <>
               <svg className="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
               Guardando...
             </>

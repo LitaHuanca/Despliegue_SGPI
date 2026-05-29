@@ -4,7 +4,7 @@
  * Reemplazar con GET /api/v1/docentes.
  */
 
-import type { DocenteInvestigador, StatsDocentes } from './types';
+import type { DocenteInvestigador, StatsDocentes, ProyectoHistorial } from './types';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -181,3 +181,174 @@ export const MOCK_STATS: StatsDocentes = {
   proyectosActivos:      1054,
   cicloAcademico:        '2024-I',
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock: Historial de Proyectos por docente
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const MOCK_HISTORIAL_PROYECTOS: Record<string, ProyectoHistorial[]> = {
+  'DOC-001': [
+    {
+      id: 'PRJ-H-001', codigo: 'PRJ-2024-112',
+      titulo: 'Caracterización Genómica de Bacterias Extremofílas del Lago Titicaca',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2024, presupuesto: 52000,
+      entidadFinanciadora: 'CONCYTEC – ProCiencia',
+      estado: 'en_ejecucion',
+    },
+    {
+      id: 'PRJ-H-002', codigo: 'PRJ-2021-088',
+      titulo: 'Resistencia Antimicrobiana en Enterobacterias de la Cuenca Amazonica',
+      rol: 'Co-Investigador',
+      anioInicio: 2021, anioFin: 2023, presupuesto: 38500,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+    {
+      id: 'PRJ-H-003', codigo: 'PRJ-2019-034',
+      titulo: 'Bioprospección de Hongos Endófitos en la Selva Alta Peruana',
+      rol: 'Asesor',
+      anioInicio: 2019, anioFin: 2020, presupuesto: 18000,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+  ],
+  'DOC-002': [
+    {
+      id: 'PRJ-H-010', codigo: 'PRJ-2025-001',
+      titulo: 'Gravitación Cuántica de Bucles y la Estructura del Espacio-Tiempo',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2025, presupuesto: 120000,
+      entidadFinanciadora: 'CONCYTEC – ProCiencia',
+      estado: 'en_ejecucion',
+    },
+    {
+      id: 'PRJ-H-011', codigo: 'PRJ-2022-203',
+      titulo: 'Simulación de Agujeros Negros con Computación Cuántica',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2022, anioFin: 2024, presupuesto: 95000,
+      entidadFinanciadora: 'NSF – National Science Foundation',
+      estado: 'finalizado',
+    },
+    {
+      id: 'PRJ-H-012', codigo: 'PRJ-2020-117',
+      titulo: 'Modelo Cosmológico de Energía Oscura en el Perú',
+      rol: 'Co-Investigador',
+      anioInicio: 2020, anioFin: 2022, presupuesto: 47000,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+  ],
+  'DOC-005': [
+    {
+      id: 'PRJ-H-020', codigo: 'PRJ-2023-684',
+      titulo: 'Optimización de Modelos de Lenguaje para Lenguas Originarias del Perú',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2023, presupuesto: 45000,
+      entidadFinanciadora: 'CONCYTEC – ProCiencia',
+      estado: 'en_ejecucion',
+    },
+    {
+      id: 'PRJ-H-021', codigo: 'PRJ-2021-112',
+      titulo: 'Sistema de Alerta Temprana para Anomalías Climáticas usando Machine Learning',
+      rol: 'Co-Investigador',
+      anioInicio: 2021, anioFin: 2022, presupuesto: 28500,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+    {
+      id: 'PRJ-H-022', codigo: 'PRJ-2019-055',
+      titulo: 'Arquitectura de Microservicios para Sistemas de Información Universitarios',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2019, anioFin: 2021, presupuesto: 32000,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+    {
+      id: 'PRJ-H-023', codigo: 'PRJ-2018-030',
+      titulo: 'Detección Automática de Plagio en Documentos Académicos',
+      rol: 'Asesor',
+      anioInicio: 2018, anioFin: 2019, presupuesto: 15000,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+  ],
+  'DOC-007': [
+    {
+      id: 'PRJ-H-030', codigo: 'PRJ-2024-311',
+      titulo: 'Algoritmos Cuasi-Óptimos para la Resolución de Sistemas de Ecuaciones No Lineales',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2024, presupuesto: 78000,
+      entidadFinanciadora: 'CONCYTEC – ProCiencia',
+      estado: 'en_ejecucion',
+    },
+    {
+      id: 'PRJ-H-031', codigo: 'PRJ-2022-189',
+      titulo: 'Redes Neuronales Profundas aplicadas a Procesamiento de Imágenes Médicas',
+      rol: 'Co-Investigador',
+      anioInicio: 2022, anioFin: 2023, presupuesto: 55000,
+      entidadFinanciadora: 'MINSA – INS',
+      estado: 'finalizado',
+    },
+  ],
+  'DOC-011': [
+    {
+      id: 'PRJ-H-040', codigo: 'PRJ-2025-007',
+      titulo: 'Topología Algebraica Aplicada al Análisis de Datos Matemáticos Complejos',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2025, presupuesto: 88000,
+      entidadFinanciadora: 'CONCYTEC – ProCiencia',
+      estado: 'en_ejecucion',
+    },
+    {
+      id: 'PRJ-H-041', codigo: 'PRJ-2023-099',
+      titulo: 'Optimización Matemática de Rutas Logísticas en Ciudades Inteligentes',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2023, anioFin: 2024, presupuesto: 42000,
+      entidadFinanciadora: 'MTC – Ministerio de Transportes',
+      estado: 'finalizado',
+    },
+    {
+      id: 'PRJ-H-042', codigo: 'PRJ-2021-050',
+      titulo: 'Análisis Espectral de Señales Biomédicas con Onditas Matemáticas',
+      rol: 'Co-Investigador',
+      anioInicio: 2021, anioFin: 2022, presupuesto: 29000,
+      entidadFinanciadora: 'INSM – Instituto Nacional de Salud Mental',
+      estado: 'finalizado',
+    },
+    {
+      id: 'PRJ-H-043', codigo: 'PRJ-2019-021',
+      titulo: 'Modelos Estocásticos de Propagación de Epidemias en Régimen Tropical',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2019, anioFin: 2020, presupuesto: 24500,
+      entidadFinanciadora: 'OPS – Organización Panamericana de la Salud',
+      estado: 'finalizado',
+    },
+  ],
+};
+
+/** Fallback genérico para cualquier docente sin entradas en MOCK_HISTORIAL_PROYECTOS */
+export function getMockHistorial(docenteId: string): ProyectoHistorial[] {
+  if (MOCK_HISTORIAL_PROYECTOS[docenteId]) {
+    return MOCK_HISTORIAL_PROYECTOS[docenteId];
+  }
+  // Genera 2 proyectos genéricos
+  return [
+    {
+      id: `PRJ-GEN-${docenteId}-1`, codigo: `PRJ-2023-${docenteId.slice(-3)}`,
+      titulo: 'Proyecto de Investigación Interdisciplinario en Ciencias Básicas',
+      rol: 'Investigador Principal (IP)',
+      anioInicio: 2023, presupuesto: 35000,
+      entidadFinanciadora: 'CONCYTEC – ProCiencia',
+      estado: 'en_ejecucion',
+    },
+    {
+      id: `PRJ-GEN-${docenteId}-2`, codigo: `PRJ-2021-${docenteId.slice(-3)}`,
+      titulo: 'Desarrollo de Capacidades de Investigación Formativa',
+      rol: 'Co-Investigador',
+      anioInicio: 2021, anioFin: 2022, presupuesto: 22000,
+      entidadFinanciadora: 'VRI – UNMSM',
+      estado: 'finalizado',
+    },
+  ];
+}

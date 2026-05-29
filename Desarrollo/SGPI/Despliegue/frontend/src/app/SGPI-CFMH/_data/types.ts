@@ -10,6 +10,8 @@
  *   DELETE /api/v1/docentes/{id}              → desactivar
  *   GET    /api/v1/docentes/validar-dni?dni=  → EX1: validar unicidad de DNI
  *   GET    /api/v1/docentes/stats             → KPIs del tablero
+ *   GET    /api/v1/docentes/{id}/historial    → Línea de Tiempo de Proyectos
+ *   GET    /api/v1/docentes/{id}/certificado  → Generar certificado PDF
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,4 +108,33 @@ export interface DocentePayload {
   fechaVigencia?:   string;
   codigoDocente?:   string;
   puntajeHistorico: PuntajeAnual[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Historial de Proyectos (Línea de Tiempo)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type EstadoProyecto =
+  | 'en_ejecucion'
+  | 'finalizado'
+  | 'suspendido'
+  | 'en_evaluacion';
+
+export type RolProyecto =
+  | 'Investigador Principal (IP)'
+  | 'Co-Investigador'
+  | 'Asesor'
+  | 'Tesista'
+  | 'Colaborador';
+
+export interface ProyectoHistorial {
+  id:                  string;
+  codigo:              string;        // "PRJ-2023-684"
+  titulo:              string;
+  rol:                 RolProyecto;
+  anioInicio:          number;
+  anioFin?:            number;        // undefined = "Presente"
+  presupuesto:         number;        // en soles
+  entidadFinanciadora: string;
+  estado:              EstadoProyecto;
 }
