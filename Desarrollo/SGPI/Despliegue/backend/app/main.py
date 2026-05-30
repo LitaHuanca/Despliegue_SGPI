@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CAPIRESTC"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CMR"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CRAPI"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CMEE"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "SGPI-CAPIAC"))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from sgpi_capirestc.api.v1.api import api_router
 from sgpi_cmr.api.reconciliation import router as cmr_router
 from sgpi_crapi.api.v1.api import api_router as crapi_router
 from sgpi_cmee.api.v1.api import api_router as cmee_router
+from sgpi_capiac.api.v1.api import api_router as capiac_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -37,6 +39,8 @@ app.include_router(cmr_router, prefix="/api/v1/reconciliation", tags=["Reconcili
 app.include_router(crapi_router, prefix="/api/v1")
 # Registrar router del CMEE (Exportación Excel)
 app.include_router(cmee_router, prefix="/api/v1")
+# Registrar router del CAPIAC (Configuración y Auditoría)
+app.include_router(capiac_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health_check():

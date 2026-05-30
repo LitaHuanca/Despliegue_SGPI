@@ -403,3 +403,26 @@ CREATE TABLE reconciliacion_pendientes (
 );
 
 COMMENT ON TABLE reconciliacion_pendientes IS 'Tabla de staging para registros conflictivos detectados por el MRN antes de su persistencia en las tablas maestras.';
+
+-- ------------------------------------------------------------------------------------
+-- SECCIÓN 7: CONFIGURACIÓN GLOBAL (CU13)
+-- ------------------------------------------------------------------------------------
+
+CREATE TABLE configuracion_global (
+    clave VARCHAR(100) PRIMARY KEY,
+    valor JSONB NOT NULL,
+    descripcion TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+COMMENT ON TABLE configuracion_global IS 'Almacena variables de entorno técnicas en BD para evitar reinicios del sistema.';
+
+-- Valores semilla (CU13)
+INSERT INTO configuracion_global (clave, valor, descripcion) VALUES
+('scraping.vrip.url_base', '"https://vrip.unmsm.edu.pe"', 'URL base del VRIP UNMSM para el scraper'),
+('scraping.cybertesis.url_base', '"https://cybertesis.unmsm.edu.pe"', 'URL base de Cybertesis para el scraper'),
+('scraping.frecuencia_horas', '24', 'Frecuencia de actualización en horas'),
+('alertas.semaforo_rojo_dias', '5', 'Margen de días para alerta roja antes del cierre de entregable o convocatoria'),
+('alertas.semaforo_amarillo_dias', '10', 'Margen de días para alerta amarilla antes del cierre'),
+('carga_no_lectiva.maximo_horas_semanales', '16', 'Límite máximo de horas semanales permitidas (Regla institucional FISI)'),
+('reportes.limite_filas_export', '500', 'Límite de seguridad de filas para exportaciones grandes de datos');

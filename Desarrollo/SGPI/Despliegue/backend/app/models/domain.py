@@ -232,3 +232,9 @@ class SnapshotPOI(Base):
     datos_serializados = Column(JSON, nullable=False)
     timestamp_generacion = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+class ConfiguracionGlobal(Base):
+    __tablename__ = 'configuracion_global'
+    clave = Column(String(100), primary_key=True)
+    valor = Column(JSON, nullable=False)
+    descripcion = Column(Text)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
