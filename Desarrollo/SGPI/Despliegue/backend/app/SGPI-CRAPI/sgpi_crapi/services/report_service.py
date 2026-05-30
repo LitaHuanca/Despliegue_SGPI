@@ -99,11 +99,11 @@ async def _calculate_workloads_batch(db: AsyncSession, params: ReportParams, inv
             "horas_asignadas": horas
         })
         
-    # Batch Query: Tesis (filtro por año por defecto actual)
+    # Batch Query: Tesis (filtro por año por defecto actual o nulo si no está en bd)
     anio_tesis = params.anio_corte or date.today().year
     stmt_tesis = select(Tesis).where(
         Tesis.dni_asesor.in_(dnis),
-        Tesis.anio_publicacion == anio_tesis
+        (Tesis.anio_publicacion == anio_tesis) | (Tesis.anio_publicacion.is_(None))
     )
     res_tesis = await db.execute(stmt_tesis)
     
@@ -164,7 +164,7 @@ async def generate_active_projects_report(db: AsyncSession, params: ReportParams
     stmt = select(Proyecto).where(Proyecto.estado_proyecto.in_(['Aprobado', 'En ejecución']))
     
     if params.grupo_investigacion:
-        stmt = stmt.where(Proyecto.codigo_grupo == params.grupo_investigacion)
+        stmt = stmt.join(GrupoInvestigacion, Proyecto.id_grupo == GrupoInvestigacion.id_grupo).where(GrupoInvestigacion.codigo_grupo == params.grupo_investigacion)
     
     if params.departamento_academico:
         subq = select(InvestigadorProyecto.codigo_proyecto).join(
@@ -210,7 +210,7 @@ async def generate_active_projects_report(db: AsyncSession, params: ReportParams
             titulo=p.titulo_proyecto,
             tipo_proyecto=p.tipo_proyecto,
             presupuesto=presupuesto,
-            grupo_investigacion=p.codigo_grupo,
+            grupo_investigacion=str(p.id_grupo) if p.id_grupo else None,
             fecha_inicio=p.fecha_inicio,
             estado=p.estado_proyecto,
             integrantes=miembros_por_proyecto.get(p.codigo_proyecto, [])
@@ -285,8 +285,8 @@ async def generate_scientific_production_report(db: AsyncSession, params: Report
             
     # 2. Tesis
     stmt_tesis = select(Tesis)
-    anio_tesis = params.anio_corte or date.today().year
-    stmt_tesis = stmt_tesis.where(Tesis.anio_publicacion == anio_tesis)
+    if params.anio_corte:
+        stmt_tesis = stmt_tesis.where(Tesis.anio_publicacion == params.anio_corte)
         
     if params.departamento_academico:
         stmt_tesis = stmt_tesis.join(

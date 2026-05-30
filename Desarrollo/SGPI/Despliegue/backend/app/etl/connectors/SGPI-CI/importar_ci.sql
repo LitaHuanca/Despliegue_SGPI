@@ -27,7 +27,8 @@ BEGIN
         BEGIN
             INSERT INTO public.investigador (
                 dni, nombres, apellidos, condicion_laboral, departamento_academico,
-                grado_academico_max, codigo_renacyt, categoria_renacyt, investigador_sm, estado_vigencia
+                grado_academico_max, codigo_renacyt, categoria_renacyt, investigador_sm, estado_vigencia,
+                orcid, institucion_principal, estado_renacyt, url_cti_vitae
             ) VALUES (
                 v_dni,
                 (elem->>'nombres')::VARCHAR,
@@ -38,14 +39,22 @@ BEGIN
                 (elem->>'codigo_renacyt')::VARCHAR,
                 COALESCE((elem->>'categoria_renacyt')::VARCHAR, 'No Clasificado'),
                 COALESCE((elem->>'investigador_sm')::BOOLEAN, FALSE),
-                COALESCE((elem->>'estado_vigencia')::VARCHAR, 'Activo')
+                COALESCE((elem->>'estado_vigencia')::VARCHAR, 'Activo'),
+                (elem->>'orcid')::VARCHAR,
+                (elem->>'institucion_principal')::VARCHAR,
+                (elem->>'estado_renacyt')::VARCHAR,
+                (elem->>'url_cti_vitae')::VARCHAR
             )
             ON CONFLICT (dni) DO UPDATE
             SET
-                grado_academico_max = COALESCE(EXCLUDED.grado_academico_max, investigador.grado_academico_max),
-                codigo_renacyt      = COALESCE(EXCLUDED.codigo_renacyt, investigador.codigo_renacyt),
-                categoria_renacyt   = COALESCE(EXCLUDED.categoria_renacyt, investigador.categoria_renacyt),
-                updated_at          = timezone('utc'::text, now());
+                grado_academico_max   = COALESCE(EXCLUDED.grado_academico_max, investigador.grado_academico_max),
+                codigo_renacyt        = COALESCE(EXCLUDED.codigo_renacyt, investigador.codigo_renacyt),
+                categoria_renacyt     = COALESCE(EXCLUDED.categoria_renacyt, investigador.categoria_renacyt),
+                orcid                 = COALESCE(EXCLUDED.orcid, investigador.orcid),
+                institucion_principal = COALESCE(EXCLUDED.institucion_principal, investigador.institucion_principal),
+                estado_renacyt        = COALESCE(EXCLUDED.estado_renacyt, investigador.estado_renacyt),
+                url_cti_vitae         = COALESCE(EXCLUDED.url_cti_vitae, investigador.url_cti_vitae),
+                updated_at            = timezone('utc'::text, now());
                 
             -- Nota: No usamos RETURNING xmax para distinguir insert/update por simplicidad de Supabase
             cnt_updated := cnt_updated + 1; 
@@ -71,6 +80,7 @@ AS $$
 DECLARE
     elem JSONB;
     v_codigo VARCHAR(50);
+    v_id_grupo INT;
     cnt_procesados INT := 0;
     cnt_fallidos INT := 0;
 BEGIN
@@ -101,7 +111,8 @@ BEGIN
                 nombre_grupo = EXCLUDED.nombre_grupo,
                 correo_coordinador = COALESCE(EXCLUDED.correo_coordinador, grupo_investigacion.correo_coordinador),
                 dni_coordinador = COALESCE(EXCLUDED.dni_coordinador, grupo_investigacion.dni_coordinador),
-                lineas_investigacion = COALESCE(EXCLUDED.lineas_investigacion, grupo_investigacion.lineas_investigacion);
+                lineas_investigacion = COALESCE(EXCLUDED.lineas_investigacion, grupo_investigacion.lineas_investigacion)
+            RETURNING id_grupo INTO v_id_grupo;
             
             -- Procesar miembros
             IF jsonb_array_length(elem->'miembros') > 0 THEN
@@ -109,9 +120,9 @@ BEGIN
                     miembro JSONB;
                 BEGIN
                     FOR miembro IN SELECT * FROM jsonb_array_elements(elem->'miembros') LOOP
-                        INSERT INTO public.miembro_grupo (codigo_grupo, dni_investigador, condicion_miembro)
-                        VALUES (v_codigo, (miembro->>'dni')::VARCHAR, (miembro->>'condicion_miembro')::VARCHAR)
-                        ON CONFLICT (codigo_grupo, dni_investigador) DO UPDATE
+                        INSERT INTO public.miembro_grupo (id_grupo, dni_investigador, condicion_miembro)
+                        VALUES (v_id_grupo, (miembro->>'dni')::VARCHAR, (miembro->>'condicion_miembro')::VARCHAR)
+                        ON CONFLICT (id_grupo, dni_investigador) DO UPDATE
                         SET condicion_miembro = EXCLUDED.condicion_miembro;
                     END LOOP;
                 END;
@@ -148,20 +159,20 @@ BEGIN
         BEGIN
             INSERT INTO public.proyecto (
                 codigo_proyecto, titulo_proyecto, resolucion_aprobacion, tipo_programa,
-                anio_convocatoria, codigo_grupo
+                anio_convocatoria, id_grupo
             ) VALUES (
                 (elem->>'codigo_proyecto')::VARCHAR,
                 (elem->>'titulo_proyecto')::VARCHAR,
                 (elem->>'resolucion_aprobacion')::VARCHAR,
                 (elem->>'tipo_programa')::VARCHAR,
                 (elem->>'anio_convocatoria')::INT,
-                (elem->>'codigo_grupo')::VARCHAR
+                (elem->>'id_grupo')::INT
             )
             ON CONFLICT (codigo_proyecto) DO UPDATE
             SET
                 titulo_proyecto = EXCLUDED.titulo_proyecto,
                 tipo_programa = COALESCE(EXCLUDED.tipo_programa, proyecto.tipo_programa),
-                codigo_grupo = COALESCE(EXCLUDED.codigo_grupo, proyecto.codigo_grupo),
+                id_grupo = COALESCE(EXCLUDED.id_grupo, proyecto.id_grupo),
                 updated_at = timezone('utc'::text, now());
             
             -- Procesar docentes asociados al proyecto
@@ -204,7 +215,7 @@ BEGIN
         BEGIN
             INSERT INTO public.publicacion (
                 titulo_articulo, nombre_revista, doi_codigo, indexacion, 
-                tipo_publicacion, nombre_evento, codigo_grupo
+                tipo_publicacion, nombre_evento, id_grupo
             ) VALUES (
                 (elem->>'titulo_articulo')::VARCHAR,
                 (elem->>'nombre_revista')::VARCHAR,
@@ -212,15 +223,12 @@ BEGIN
                 (elem->>'indexacion')::VARCHAR,
                 (elem->>'tipo_publicacion')::VARCHAR,
                 (elem->>'nombre_evento')::VARCHAR,
-                (elem->>'codigo_grupo')::VARCHAR
+                (elem->>'id_grupo')::INT
             )
             -- Como id_publicacion es SERIAL, podemos hacer conflicto por DOI si no es nulo,
             -- pero en nuestro DDL actual solo tenemos id_publicacion. Asumiremos inserción pura 
             -- a menos que agreguemos ON CONFLICT (doi_codigo).
-            ON CONFLICT (doi_codigo) DO UPDATE
-            SET
-                indexacion = EXCLUDED.indexacion,
-                codigo_grupo = COALESCE(EXCLUDED.codigo_grupo, publicacion.codigo_grupo);
+            -- (Se eliminó ON CONFLICT para evitar error de constraint faltante)
 
             -- Intersección con Investigador (tabla investigador_publicacion)
             -- No implementada en el payload actual porque no tenemos la PK id_publicacion de antemano.

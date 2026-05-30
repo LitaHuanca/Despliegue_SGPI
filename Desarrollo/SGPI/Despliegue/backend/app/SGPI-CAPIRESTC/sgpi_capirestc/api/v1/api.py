@@ -7,7 +7,7 @@ from sgpi_capirestc.api.v1.endpoints import calls
 from sgpi_capirestc.api.v1.endpoints import users
 from sgpi_capirestc.api.v1.endpoints import publications
 from sgpi_capirestc.api.v1.endpoints import theses
-from router import router as cbapi_router
+from sgpi_capirestc.api.v1.endpoints import search
 
 api_router = APIRouter()
 

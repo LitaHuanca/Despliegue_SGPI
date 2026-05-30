@@ -39,7 +39,8 @@ class Investigador(Base):
 
 class GrupoInvestigacion(Base):
     __tablename__ = 'grupo_investigacion'
-    codigo_grupo = Column(String(50), primary_key=True)
+    id_grupo = Column(Integer, primary_key=True, autoincrement=True)
+    codigo_grupo = Column(String(50), unique=True, nullable=False)
     nombre_grupo = Column(Text, nullable=False)
     siglas = Column(String(20))
     descripcion = Column(Text)
@@ -55,7 +56,7 @@ class GrupoInvestigacion(Base):
 class MiembroGrupo(Base):
     __tablename__ = 'miembro_grupo'
     id_membresia = Column(Integer, primary_key=True, autoincrement=True)
-    codigo_grupo = Column(String(50), ForeignKey('grupo_investigacion.codigo_grupo', ondelete='CASCADE'))
+    id_grupo = Column(Integer, ForeignKey('grupo_investigacion.id_grupo', ondelete='CASCADE'))
     dni_investigador = Column(String(15), ForeignKey('investigador.dni', ondelete='CASCADE'))
     condicion_miembro = Column(String(50), nullable=False)
     estado_membresia = Column(String(20), default='Activo')
@@ -73,7 +74,7 @@ class Proyecto(Base):
     tipo_programa = Column(String(20))
     facultad_proyecto = Column(String(100), default='Ingeniería de Sistemas e Informática')
     presupuesto_asignado = Column(Numeric(12, 2), default=0.00)
-    codigo_grupo = Column(String(50), ForeignKey('grupo_investigacion.codigo_grupo', ondelete='SET NULL'))
+    id_grupo = Column(Integer, ForeignKey('grupo_investigacion.id_grupo', ondelete='SET NULL'))
     area_academica = Column(String(100))
     anio_convocatoria = Column(Integer)
     fecha_inicio = Column(Date)
@@ -148,7 +149,7 @@ class Publicacion(Base):
     indexacion = Column(String(100))
     fecha_publicacion = Column(Date)
     url_documento = Column(String(255))
-    codigo_grupo = Column(String(50), ForeignKey('grupo_investigacion.codigo_grupo', ondelete='SET NULL'))
+    id_grupo = Column(Integer, ForeignKey('grupo_investigacion.id_grupo', ondelete='SET NULL'))
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class InvestigadorPublicacion(Base):
