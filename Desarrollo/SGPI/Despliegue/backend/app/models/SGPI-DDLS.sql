@@ -51,7 +51,8 @@ CREATE TABLE investigador (
 
 -- 3. Catálogo Oficial de Grupos de Investigación
 CREATE TABLE grupo_investigacion (
-    codigo_grupo         VARCHAR(50)  PRIMARY KEY,
+    id_grupo             SERIAL       PRIMARY KEY,
+    codigo_grupo         VARCHAR(50)  UNIQUE NOT NULL,
     nombre_grupo         TEXT         NOT NULL,
     siglas               VARCHAR(20),
     descripcion          TEXT,                     -- Edición descriptiva requerida (CU05)
@@ -68,7 +69,7 @@ CREATE TABLE grupo_investigacion (
 
 CREATE TABLE miembro_grupo (
     id_membresia 	SERIAL PRIMARY KEY,
-    codigo_grupo 	VARCHAR(50) REFERENCES grupo_investigacion(codigo_grupo) ON DELETE CASCADE,
+    id_grupo     	INT REFERENCES grupo_investigacion(id_grupo) ON DELETE CASCADE,
     dni_investigador 	VARCHAR(15) REFERENCES investigador(dni) ON DELETE CASCADE,
     condicion_miembro 	VARCHAR(50) NOT NULL CHECK (condicion_miembro IN ('Coordinador', 'Titular', 'Adherente', 'Estudiante')),
     estado_membresia 	VARCHAR(20) DEFAULT 'Activo' CHECK (estado_membresia IN ('Activo', 'Inactivo')),
@@ -76,7 +77,7 @@ CREATE TABLE miembro_grupo (
     fecha_salida 	DATE,
     created_at 		TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at 		TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
-    UNIQUE (codigo_grupo, dni_investigador)
+    UNIQUE (id_grupo, dni_investigador)
 );
 
 -- 4. Convocatorias del VRIP
@@ -111,7 +112,7 @@ CREATE TABLE publicacion (
     indexacion      VARCHAR(100),                  -- Scopus, Web of Science, SciELO
     fecha_publicacion DATE,
     url_documento   VARCHAR(255),
-    codigo_grupo    VARCHAR(50)   REFERENCES grupo_investigacion(codigo_grupo) ON DELETE SET NULL,
+    id_grupo        INT           REFERENCES grupo_investigacion(id_grupo) ON DELETE SET NULL,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
@@ -154,7 +155,7 @@ CREATE TABLE proyecto (
     tipo_programa        VARCHAR(20),  -- PCONFIGI, SINFIN, PMULTIS...
     facultad_proyecto    VARCHAR(100)  DEFAULT 'Ingeniería de Sistemas e Informática',
     presupuesto_asignado DECIMAL(12,2) DEFAULT 0.00,
-    codigo_grupo         VARCHAR(50)   REFERENCES grupo_investigacion(codigo_grupo) ON DELETE SET NULL,
+    id_grupo             INT           REFERENCES grupo_investigacion(id_grupo) ON DELETE SET NULL,
     area_academica       VARCHAR(100),
     anio_convocatoria    INT,
     fecha_inicio         DATE,         -- Fecha de RR / inicio actividades
@@ -364,7 +365,7 @@ FROM convocatoria;
 
 -- Índices core de búsqueda y filtrado
 CREATE INDEX idx_investigador_apellidos  ON investigador(apellidos);
-CREATE INDEX idx_proyecto_grupo          ON proyecto(codigo_grupo);
+CREATE INDEX idx_proyecto_grupo          ON proyecto(id_grupo);
 CREATE INDEX idx_proyecto_estado         ON proyecto(estado_proyecto);
 CREATE INDEX idx_tesis_asesor            ON tesis(dni_asesor);
 CREATE INDEX idx_usuario_correo          ON usuario(correo_institucional);
@@ -402,3 +403,26 @@ CREATE TABLE reconciliacion_pendientes (
 );
 
 COMMENT ON TABLE reconciliacion_pendientes IS 'Tabla de staging para registros conflictivos detectados por el MRN antes de su persistencia en las tablas maestras.';
+
+-- ------------------------------------------------------------------------------------
+-- SECCIÓN 7: CONFIGURACIÓN GLOBAL (CU13)
+-- ------------------------------------------------------------------------------------
+
+CREATE TABLE configuracion_global (
+    clave VARCHAR(100) PRIMARY KEY,
+    valor JSONB NOT NULL,
+    descripcion TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+COMMENT ON TABLE configuracion_global IS 'Almacena variables de entorno técnicas en BD para evitar reinicios del sistema.';
+
+-- Valores semilla (CU13)
+INSERT INTO configuracion_global (clave, valor, descripcion) VALUES
+('scraping.vrip.url_base', '"https://vrip.unmsm.edu.pe"', 'URL base del VRIP UNMSM para el scraper'),
+('scraping.cybertesis.url_base', '"https://cybertesis.unmsm.edu.pe"', 'URL base de Cybertesis para el scraper'),
+('scraping.frecuencia_horas', '24', 'Frecuencia de actualización en horas'),
+('alertas.semaforo_rojo_dias', '5', 'Margen de días para alerta roja antes del cierre de entregable o convocatoria'),
+('alertas.semaforo_amarillo_dias', '10', 'Margen de días para alerta amarilla antes del cierre'),
+('carga_no_lectiva.maximo_horas_semanales', '16', 'Límite máximo de horas semanales permitidas (Regla institucional FISI)'),
+('reportes.limite_filas_export', '500', 'Límite de seguridad de filas para exportaciones grandes de datos');

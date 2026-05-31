@@ -30,7 +30,7 @@ class ProyectoModel(BaseModel):
     titulo_proyecto: str = Field(...)
     tipo_programa: Optional[str] = Field(None)
     anio_convocatoria: Optional[int] = Field(None)
-    codigo_grupo: Optional[str] = Field(None)
+    id_grupo: Optional[int] = Field(None)
     docentes: List[dict] = Field(default_factory=list) # [{'dni': '...', 'condicion_rol': '...'}]
 
 class PublicacionModel(BaseModel):
@@ -40,7 +40,7 @@ class PublicacionModel(BaseModel):
     indexacion: Optional[str] = Field(None)
     tipo_publicacion: str = Field(...)
     nombre_evento: Optional[str] = Field(None)
-    codigo_grupo: Optional[str] = Field(None)
+    id_grupo: Optional[int] = Field(None)
     dni_autor: str = Field(...)
 
 class TesisModel(BaseModel):

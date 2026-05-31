@@ -39,7 +39,7 @@ _load_dotenv(Path.cwd() / ".env")
 # ---------------------------------------------------------------------------
 class Settings:
     SUPABASE_URL: str = os.environ.get("SUPABASE_URL", "")
-    SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY", "")
+    SUPABASE_SERVICE_KEY: str = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY", "")
 
     @classmethod
     def validate(cls) -> None:

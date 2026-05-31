@@ -120,11 +120,14 @@ export function useAsyncJob(statusFetcher: StatusFetcher) {
    * Se llama automáticamente después de obtener el job_id.
    */
   const startPolling = useCallback((jobId: string) => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+    }
     currentJobIdRef.current = jobId;
 
-    pollingRef.current = setInterval(async () => {
+    const intervalId = setInterval(async () => {
       if (!isMountedRef.current) {
-        stopPolling();
+        clearInterval(intervalId);
         return;
       }
 
@@ -144,7 +147,10 @@ export function useAsyncJob(statusFetcher: StatusFetcher) {
 
         // Detener el polling si el job terminó
         if (TERMINAL_STATUSES.includes(result.status)) {
-          stopPolling();
+          clearInterval(intervalId);
+          if (pollingRef.current === intervalId) {
+            pollingRef.current = null;
+          }
 
           if (!isMountedRef.current) return;
 
@@ -174,7 +180,11 @@ export function useAsyncJob(statusFetcher: StatusFetcher) {
           ? err.message
           : 'Error al verificar el estado del proceso. Intente nuevamente.';
 
-        stopPolling();
+        clearInterval(intervalId);
+        if (pollingRef.current === intervalId) {
+          pollingRef.current = null;
+        }
+        
         setState((prev) => ({
           ...prev,
           isRunning: false,

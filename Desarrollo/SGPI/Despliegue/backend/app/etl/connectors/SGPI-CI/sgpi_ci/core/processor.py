@@ -1,7 +1,7 @@
 import sys
 import os
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from pydantic import ValidationError
 
@@ -155,6 +155,63 @@ class EtlProcessor:
 
         print(f"[{self.filename}] Enriquecimiento completo. {len(name_to_dni)} DNIs resueltos.")
 
+        # ---------------------------------------------------------
+        # MATCHING DE GRUPOS DE INVESTIGACIÓN (Fuzzy / Exacto)
+        # ---------------------------------------------------------
+        print(f"[{self.filename}] Obteniendo padrón de grupos para Foreign Keys...")
+        try:
+            from rapidfuzz import process, fuzz
+            has_rapidfuzz = True
+        except ImportError:
+            has_rapidfuzz = False
+            print("ADVERTENCIA: rapidfuzz no instalado, el mapeo de grupos será exacto.")
+            
+        grupos_db = self.uploader.fetch_grupos()
+        
+        def match_grupo(query_str: str) -> Optional[int]:
+            if not query_str or not grupos_db: return None
+            
+            # 1. Manejar múltiples grupos en una celda (ej: 'yachay / itdata')
+            # Tomamos el primero de forma heurística, ya que la BD solo acepta 1 id_grupo
+            first_q = re.split(r'[/,\n]', str(query_str))[0].strip()
+            q_upper = first_q.upper()
+            
+            # 2. Diccionario de mapeo duro para siglas informales (Hoja de Publicaciones)
+            MAPEO_SIGLAS = {
+                "IOT": "INTERNETDELASCO",
+                "INWE": "INGENIERAWEB",
+                "INTGARTI": "INNOVANDOSISTEM",
+                "BIOMEDIT": "TECNOLOGASDELAI",
+                "YACHAY": "YACHAY",
+                "ITDATA": "ITDATA"
+            }
+            translated_q = MAPEO_SIGLAS.get(q_upper, q_upper)
+            
+            # 3. Búsqueda exacta por siglas, código o nombre
+            for g in grupos_db:
+                # Comparamos el valor traducido
+                if translated_q == (g.get('siglas', '') or '').upper(): return g['id_grupo']
+                if translated_q == (g.get('codigo_grupo', '') or '').upper(): return g['id_grupo']
+                if translated_q == (g.get('nombre_grupo', '') or '').upper(): return g['id_grupo']
+                
+                # Comparamos el valor original por si acaso
+                if q_upper == (g.get('siglas', '') or '').upper(): return g['id_grupo']
+                if q_upper == (g.get('codigo_grupo', '') or '').upper(): return g['id_grupo']
+                if q_upper == (g.get('nombre_grupo', '') or '').upper(): return g['id_grupo']
+                
+            # 4. Búsqueda difusa por nombre
+            if has_rapidfuzz:
+                nombres = {g['id_grupo']: g['nombre_grupo'] for g in grupos_db if g.get('nombre_grupo')}
+                if not nombres: return None
+                choices = list(nombres.values())
+                # Buscamos usando la versión original, ya que el diccionario ya cubrió los slugs raros
+                res = process.extractOne(first_q, choices, scorer=fuzz.partial_ratio)
+                if res and res[1] >= 80:
+                    best_name = res[0]
+                    for g_id, name in nombres.items():
+                        if name == best_name: return g_id
+            return None
+
         # 3. Ensamblaje de Modelos Finales
         proyectos_validos, publicaciones_validas, tesis_validas, grupos_validos = [], [], [], []
 
@@ -164,6 +221,10 @@ class EtlProcessor:
             codigo = p['codigo_proyecto']
             docente = p.get('docente_nombre')
             dni = name_to_dni.get(docente)
+            
+            # Resolve group FK
+            if p.get('codigo_grupo'):
+                p['id_grupo'] = match_grupo(p['codigo_grupo'])
             
             if codigo not in proyectos_dict:
                 proyectos_dict[codigo] = p
@@ -187,6 +248,10 @@ class EtlProcessor:
                 self.failed_rows.append({"tipo": "PUB_DOCENTE_FALTANTE", "dato": pub, "mensaje": "Autor sin DNI resuelto."})
                 continue
             pub['dni_autor'] = dni
+            
+            if pub.get('codigo_grupo'):
+                pub['id_grupo'] = match_grupo(pub['codigo_grupo'])
+                
             try:
                 publicaciones_validas.append(PublicacionModel(**pub).model_dump())
             except ValidationError as e:
