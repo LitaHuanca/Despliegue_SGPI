@@ -21,9 +21,20 @@ import type {
   ReporteParams, ReporteResult, TipoReporte, CortesPOI, NivelDetalle,
 } from './_data/types';
 import {
-  generarReporte, guardarSnapshot, exportarReporte, obtenerCatalogos,
+  generarReporte, guardarSnapshot, obtenerCatalogos,
   PASOS_CARGA, UMBRAL_ALTO, UMBRAL_BAJO,
 } from './_data/service';
+import { ExportButton } from '@/SGPI-CFU/components/SGPI-CFE/export/ExportFlow';
+
+const getExportContext = (tipo: string) => {
+  switch(tipo) {
+    case 'actividades': return 'Carga No Lectiva';
+    case 'proyectosActivos': return 'Proyectos Activos';
+    case 'produccionCientifica': return 'Produccion Cientifica';
+    case 'baseDatosPOI': return 'Resumen General';
+    default: return 'Resumen General';
+  }
+};
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -678,20 +689,10 @@ function VistaResultados({
   const [page,              setPage]              = useState(1);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [showToast,         setShowToast]         = useState(false);
-  const [isExporting,       setIsExporting]       = useState(false);
-  const [showExportMenu,    setShowExportMenu]    = useState(false);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
+
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Cerrar menú al click fuera
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node))
-        setShowExportMenu(false);
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+
 
   // Limpiar timer al desmontar
   useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current); }, []);
@@ -723,13 +724,7 @@ function VistaResultados({
     toastTimerRef.current = setTimeout(() => setShowToast(false), 2000);
   };
 
-  // ── Exportar ────────────────────────────────────────────────────────────────
-  const handleExport = async (fmt: 'pdf' | 'excel') => {
-    setIsExporting(true);
-    setShowExportMenu(false);
-    await exportarReporte(result, fmt);
-    setIsExporting(false);
-  };
+
 
   // ── Color de carga ──────────────────────────────────────────────────────────
   const cargaColor = (total: number) => {
@@ -768,39 +763,10 @@ function VistaResultados({
 
         {/* Botones exportar / snapshot */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Exportar con dropdown */}
-          <div className="relative" ref={exportMenuRef}>
-            <button
-              onClick={() => setShowExportMenu((v) => !v)}
-              disabled={isExporting}
-              className="
-                flex items-center gap-1.5
-                px-4 py-2 rounded
-                font-sans font-semibold text-[13px]
-                text-on-surface border border-outline-variant
-                hover:bg-surface-container
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-colors duration-100
-              "
-              aria-label="Menú de exportación"
-            >
-              <ExportIcon />
-              {isExporting ? 'Exportando...' : 'Exportar'}
-              <ChevronDown />
-            </button>
-            {showExportMenu && (
-              <div className="absolute right-0 top-full mt-1 w-[160px] bg-white border border-outline-variant rounded shadow-level-2 overflow-hidden z-10">
-                <button onClick={() => handleExport('pdf')}
-                  className="w-full text-left px-4 py-2.5 font-sans text-[13px] text-on-surface hover:bg-surface-container transition-colors">
-                  Exportar PDF
-                </button>
-                <button onClick={() => handleExport('excel')}
-                  className="w-full text-left px-4 py-2.5 font-sans text-[13px] text-on-surface hover:bg-surface-container transition-colors">
-                  Exportar Excel
-                </button>
-              </div>
-            )}
-          </div>
+          <ExportButton 
+            context={getExportContext(result.params.tipo)} 
+            label="Exportar" 
+          />
 
           {/* Guardar snapshot */}
           <button
