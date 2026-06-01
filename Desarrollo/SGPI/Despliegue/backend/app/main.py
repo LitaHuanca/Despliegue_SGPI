@@ -76,6 +76,14 @@ async def lifespan(app: FastAPI):
     yield
     # shutdown — libera todas las conexiones del pool
     await engine.dispose()
+    
+    # Cerrar pool de Redis
+    try:
+        from app.core.cache import close_redis
+        await close_redis()
+    except Exception as exc:
+        logger.error(f"Error closing Redis connection on shutdown: {exc}", exc_info=True)
+
 
 
 # ---------------------------------------------------------------------------
