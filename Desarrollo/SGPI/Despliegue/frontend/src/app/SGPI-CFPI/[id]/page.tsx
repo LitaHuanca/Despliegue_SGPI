@@ -269,10 +269,6 @@ export default function ExpedienteDigitalPage() {
               <BackIcon />
               Volver a la Bandeja
             </button>
-            <ExportButton
-              context="proyectos_expediente"
-              label="Exportar Ficha"
-            />
           </div>
         </div>
 
