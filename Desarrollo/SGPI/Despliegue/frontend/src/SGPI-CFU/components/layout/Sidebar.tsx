@@ -168,83 +168,83 @@ const NAV_ITEMS: NavItem[] = [
   {
     id: 'search',
     label: 'Búsqueda Global',
-    href: '/search',
+    href: '/busqueda',
     icon: SearchIcon,
   },
   {
     id: 'config',
     label: 'Configuración',
-    href: '/SGPI-CFSA/Gestion_de_Cuentas_Activas',
+    href: '/configuracion/Gestion_de_Cuentas_Activas',
     icon: ConfigIcon,
-    matchPrefixes: ['/SGPI-CFSA/Gestion_de_Cuentas_Activas'],
+    matchPrefixes: ['/configuracion/Gestion_de_Cuentas_Activas'],
     roles: ['admin'],
   },
   {
     id: 'projects',
     label: 'Proyectos',
-    href: '/SGPI-CFPI',
+    href: '/proyectos',
     icon: FolderIcon,
-    matchPrefixes: ['/projects', '/SGPI-CFPI'],
+    matchPrefixes: ['/proyectos'],
   },
   {
     id: 'investigators',
     label: 'Docentes/Inv.',
-    href: '/investigators',
+    href: '/investigadores',
     icon: UserIcon,
-    matchPrefixes: ['/investigators', '/SGPI-CFMH'],
+    matchPrefixes: ['/investigadores'],
   },
   {
     id: 'groups',
     label: 'Grupos de Inv.',
-    href: '/SGPI-CFGI',
+    href: '/grupos',
     icon: UsersIcon,
-    matchPrefixes: ['/groups', '/SGPI-CFGI'],
+    matchPrefixes: ['/grupos'],
   },
   {
     id: 'sync',
     label: 'Sincronización',
-    href: '/SGPI-CFSF',
+    href: '/sincronizacion',
     icon: SyncIcon,
-    matchPrefixes: ['/SGPI-CFSF'],
+    matchPrefixes: ['/sincronizacion'],
     roles: ['admin'],
   },
   {
     id: 'import',
     label: 'Importación de datos',
-    href: '/SGPI-CFIM',
+    href: '/importacion',
     icon: ImportIcon,
-    matchPrefixes: ['/import', '/SGPI-CFIM'],
+    matchPrefixes: ['/importacion'],
     roles: ['admin', 'secretary'],
   },
   {
     id: 'calls',
     label: 'Alertas Convocatorias',
-    href: '/calls',
+    href: '/convocatorias',
     icon: BellIcon,
-    matchPrefixes: ['/calls', '/SGPI-CFAC'],
+    matchPrefixes: ['/convocatorias'],
     roles: ['admin', 'secretary', 'chief'],
   },
   {
     id: 'publications',
     label: 'Publicaciones y Tesis',
-    href: '/publications',
+    href: '/publicaciones',
     icon: BookIcon,
-    matchPrefixes: ['/publications', '/SGPI-CFPT'],
+    matchPrefixes: ['/publicaciones'],
   },
   {
     id: 'reports',
     label: 'Reportes',
-    href: '/reports',
+    href: '/reportes',
     icon: ChartIcon,
-    matchPrefixes: ['/reports', '/SGPI-CFR'],
+    matchPrefixes: ['/reportes'],
     roles: ['admin', 'secretary', 'chief'],
   },
   {
     id: 'audit',
     label: 'Auditoría de Logs',
-    href: '/SGPI-CFSA/Modulo_de_auditoria',
+    href: '/configuracion/Modulo_de_auditoria',
     icon: AuditIcon,
-    matchPrefixes: ['/SGPI-CFSA/Modulo_de_auditoria'],
+    matchPrefixes: ['/configuracion/Modulo_de_auditoria'],
     roles: ['admin'],
   },
 ];
@@ -275,7 +275,7 @@ export function Sidebar() {
   };
 
   const handleLogout = () => {
-    router.push('/SGPI-CFIS/login');
+    router.push('/auth/login');
   };
 
   return (

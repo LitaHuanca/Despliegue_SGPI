@@ -125,6 +125,7 @@ async def list_investigadores(
     estado: Optional[str] = None,
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
+    live_renacyt: bool = Query(False),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
@@ -170,6 +171,14 @@ async def list_investigadores(
         estado_mapped = estado_map.get(estado, estado)
         filters.append(Investigador.estado_vigencia == estado_mapped)
 
+    # Excluir registros externos (captados del conector RENACYT pero no formalizados)
+    # cuando no se pide búsqueda en vivo. Así sólo aparecen los investigadores
+    # que están registrados oficialmente en la base de datos local.
+    if not live_renacyt:
+        filters.append(
+            or_(Investigador.is_external == False, Investigador.is_external == None)
+        )
+
     if filters:
         stmt = stmt.where(*filters)
         count_stmt = count_stmt.where(*filters)
@@ -191,8 +200,8 @@ async def list_investigadores(
 
     pages = math.ceil(total / limit) if total > 0 else 1
 
-    # Fallback a RENACYT si no se encontraron resultados locales y se ingresó un término de búsqueda
-    if total == 0 and buscar and buscar.strip() and RenacytConnector:
+    # Fallback a RENACYT si se solicita búsqueda en vivo y no se encontraron resultados locales
+    if live_renacyt and total == 0 and buscar and buscar.strip() and RenacytConnector:
         logger.info(f"No se encontraron resultados locales para '{buscar}'. Consultando caché/RENACYT...")
         try:
             from app.core.cache import normalize_query, cache_get, cache_set

@@ -21,6 +21,7 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar, type TopBarProps } from './TopBar';
+import { AuthGuard } from '../auth/AuthGuard';
 
 export interface MainLayoutProps extends TopBarProps {
   children: React.ReactNode;
@@ -28,25 +29,27 @@ export interface MainLayoutProps extends TopBarProps {
 
 export function MainLayout({ children, title, subtitle }: MainLayoutProps) {
   return (
-    <div className="min-h-screen bg-background font-sans text-on-surface">
-      {/* Sidebar fijo */}
-      <Sidebar />
+    <AuthGuard>
+      <div className="min-h-screen bg-background font-sans text-on-surface">
+        {/* Sidebar fijo */}
+        <Sidebar />
 
-      {/* TopBar fija sobre el área de contenido */}
-      <TopBar title={title} subtitle={subtitle} />
+        {/* TopBar fija sobre el área de contenido */}
+        <TopBar title={title} subtitle={subtitle} />
 
-      {/* Área de contenido principal */}
-      <main
-        className="flex flex-col min-h-screen"
-        style={{ paddingLeft: '220px', paddingTop: '56px' }}
-        id="main-content"
-      >
-        {/* Container con padding del sistema */}
-        <div className="flex-1 p-[24px]">
-          {children}
-        </div>
-      </main>
-    </div>
+        {/* Área de contenido principal */}
+        <main
+          className="flex flex-col min-h-screen"
+          style={{ paddingLeft: '220px', paddingTop: '56px' }}
+          id="main-content"
+        >
+          {/* Container con padding del sistema */}
+          <div className="flex-1 p-[24px]">
+            {children}
+          </div>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }
 

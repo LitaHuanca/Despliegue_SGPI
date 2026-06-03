@@ -295,7 +295,7 @@ export default function SincronizacionDeFuentesPage() {
             sessionStorage.setItem('sgpi_sync_job_id', id);
           }
           setLogs((p) => addLog(p, 'SUCCESS', '✓ Sincronización completada. Redirigiendo a resultados…'));
-          setTimeout(() => router.push('/SGPI-CFSF/resultados'), 1500);
+          setTimeout(() => router.push('/sincronizacion/resultados'), 1500);
         }
         if (st.status === 'failed') {
           clearInterval(iv);
@@ -383,7 +383,7 @@ export default function SincronizacionDeFuentesPage() {
             <Button
               variant="secondary"
               size="lg"
-              onClick={() => router.push('/SGPI-CFSF/cuarentena')}
+              onClick={() => router.push('/sincronizacion/cuarentena')}
             >
               Revisar Cuarentena
             </Button>

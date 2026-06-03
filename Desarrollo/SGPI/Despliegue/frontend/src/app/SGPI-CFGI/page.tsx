@@ -2,7 +2,7 @@
 
 /**
  * @file page.tsx
- * @route /SGPI-CFGI
+ * @route /grupos
  * @description Bandeja principal de Gestión de Grupos de Investigación (SGPI-CFGI).
  */
 
@@ -12,6 +12,7 @@ import { MainLayout } from '@/SGPI-CFU/components/layout';
 import type { FiltrosGrupos, EstadoGrupo, FuenteOrigen } from './_data/types';
 import { getGrupos, getStats, type PaginatedGrupos } from './_data/service';
 import type { StatsGrupos } from './_data/types';
+import { useAuth } from '@/SGPI-CFU/lib/hooks';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuración visual de badges
@@ -212,6 +213,7 @@ function Pagination({ page, pages, onChange }: {
 
 export default function GruposBandejaPage() {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [filtros,    setFiltros]    = useState<FiltrosGrupos>(DEFAULT_FILTROS);
   const [tempBuscar, setTempBuscar] = useState('');
@@ -280,13 +282,15 @@ export default function GruposBandejaPage() {
               Controle e identifique la información importada de fuentes externas que requiere atención.
             </p>
           </div>
-          <button
-            onClick={() => router.push('/SGPI-CFGI/nuevo')}
-            className="flex items-center gap-1.5 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer whitespace-nowrap flex-shrink-0"
-          >
-            <PlusIcon />
-            Nuevo Grupo
-          </button>
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => router.push('/grupos/nuevo')}
+              className="flex items-center gap-1.5 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer whitespace-nowrap flex-shrink-0"
+            >
+              <PlusIcon />
+              Nuevo Grupo
+            </button>
+          )}
         </div>
 
         {/* Barra de Filtros */}
@@ -430,7 +434,7 @@ export default function GruposBandejaPage() {
                       <td className="px-5 py-3.5 text-right">
                         {grupo.status === 'pendiente_validacion' ? (
                           <button
-                            onClick={() => router.push(`/SGPI-CFGI/${grupo.code}/validar`)}
+                            onClick={() => router.push(`/grupos/${grupo.code}/validar`)}
                             className="inline-flex items-center gap-1.5 border border-[#001631] text-[#001631] hover:bg-[#001631] hover:text-white font-sans font-bold text-[12px] px-3 py-1 rounded transition-colors cursor-pointer"
                           >
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -440,7 +444,7 @@ export default function GruposBandejaPage() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => router.push(`/SGPI-CFGI/${grupo.code}/ficha`)}
+                            onClick={() => router.push(`/grupos/${grupo.code}/ficha`)}
                             className="inline-flex items-center justify-center text-[#475569] hover:text-[#0f172a] p-1.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
                             title="Ver Ficha Consolidada"
                             aria-label="Ver Ficha"

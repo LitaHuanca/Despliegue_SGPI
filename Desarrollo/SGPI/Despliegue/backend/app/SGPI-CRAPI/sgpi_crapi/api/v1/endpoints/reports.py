@@ -95,7 +95,8 @@ async def list_snapshots(
 @router.get("/snapshot/{id_snapshot}", response_model=SnapshotPOIResponse)
 async def get_snapshot_detail(
     id_snapshot: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_staff)
 ):
     """
     Obtiene el detalle completo de un Snapshot incluyendo el payload serializado.
@@ -103,7 +104,7 @@ async def get_snapshot_detail(
     snap = await snapshot_poi.get(db, id=id_snapshot)
     if not snap:
         raise HTTPException(status_code=404, detail="Snapshot no encontrado")
-        
+
     # Registrar acceso a datos sensibles (trazabilidad TS-14-01)
     await log_audit_event(
         db=db,
@@ -113,7 +114,7 @@ async def get_snapshot_detail(
         valor_nuevo={"accion": "Lectura completa de payload inmutable"},
         id_usuario=current_user.get("sub"),
     )
-    
+
     return snap
 
 @router.get("/catalogs", response_model=Dict[str, List[str]])
@@ -126,14 +127,27 @@ async def get_catalogs(
     # Fetch distinct departments
     dept_stmt = select(Investigador.departamento_academico).filter(Investigador.departamento_academico.isnot(None)).distinct()
     dept_result = await db.execute(dept_stmt)
-    departamentos = [row[0] for row in dept_result.all() if row[0]]
+    
+    seen_depts = set()
+    departamentos = []
+    for row in dept_result.all():
+        name = row[0].strip()
+        if name and name.lower() not in seen_depts:
+            seen_depts.add(name.lower())
+            departamentos.append(name)
     
     # Fetch all group names
     group_stmt = select(GrupoInvestigacion.nombre_grupo).filter(GrupoInvestigacion.nombre_grupo.isnot(None))
     group_result = await db.execute(group_stmt)
-    grupos = [row[0] for row in group_result.all() if row[0]]
     
-    # Añadir siempre "Todos los grupos" como opción por defecto si no está
+    seen_groups = set()
+    grupos = []
+    for row in group_result.all():
+        name = row[0].strip()
+        if name and name.lower() not in seen_groups:
+            seen_groups.add(name.lower())
+            grupos.append(name)
+    
     return {
         "departamentos": sorted(departamentos),
         "grupos": sorted(grupos)

@@ -31,6 +31,7 @@ import type {
 import { MOCK_GRUPOS, MOCK_PADRON_INVESTIGADORES, getMockStats } from './mock';
 import { supabase } from '../../../SGPI-CFU/lib/supabase';
 import { apiClient } from '../../../SGPI-CFU/lib/api/client';
+import { formatEmail } from '@/SGPI-CFU/lib/utils/formatters';
  
 const PAGE_SIZE = 10;
  
@@ -241,7 +242,7 @@ export async function getStats(): Promise<StatsGrupos> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Buscar investigadores en el Padrón de Investigadores (CUO4)
+// Buscar investigadores en el Padrón de Investigadores
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function buscarInvestigadores(buscar: string): Promise<InvestigatorPadron[]> {
@@ -261,7 +262,7 @@ export async function buscarInvestigadores(buscar: string): Promise<Investigator
       nombre: `${d.nombres} ${d.apellidos}`,
       nombres: d.nombres,
       apellidos: d.apellidos,
-      email: `${d.dni}@unmsm.edu.pe`,
+      email: formatEmail(d.correo),
       facultad: d.facultad_dependencia || '',
       departamento: d.departamento_academico || '',
       isExternal: d.is_external || false,
@@ -271,7 +272,7 @@ export async function buscarInvestigadores(buscar: string): Promise<Investigator
     console.error("Error fetching investigators from API, falling back to local Supabase query", err);
     const { data, error } = await supabase
       .from('investigador')
-      .select('dni, nombres, apellidos, departamento_academico, facultad_dependencia, categoria_renacyt')
+      .select('dni, nombres, apellidos, departamento_academico, facultad_dependencia, categoria_renacyt, correo')
       .or(`dni.eq.${buscar.trim()},nombres.ilike.%${buscar.trim()}%,apellidos.ilike.%${buscar.trim()}%`)
       .limit(10);
  
@@ -282,7 +283,7 @@ export async function buscarInvestigadores(buscar: string): Promise<Investigator
       nombre: `${d.nombres} ${d.apellidos}`,
       nombres: d.nombres,
       apellidos: d.apellidos,
-      email: `${d.dni}@unmsm.edu.pe`,
+      email: formatEmail(d.correo),
       facultad: d.facultad_dependencia || '',
       departamento: d.departamento_academico || '',
       isExternal: false,
@@ -338,7 +339,7 @@ export async function validarGrupo(
       estado_grupo: mapEstadoGrupoBD(payload.status) || 'Activo',
       fecha_reconocimiento: payload.recognitionDate || new Date().toISOString().split('T')[0],
       dni_coordinador: coordinatorDni,
-      correo_coordinador: coordinatorDni ? `${coordinatorDni}@unmsm.edu.pe` : null,
+      correo_coordinador: coordinatorDni && !/^\d+$/.test(coordinatorDni) ? `${coordinatorDni}@unmsm.edu.pe` : null,
     })
     .eq('id_grupo', idGrupoNum)
     .select()
@@ -461,7 +462,7 @@ export async function crearGrupo(
       estado_grupo: mapEstadoGrupoBD(payload.status) || 'Activo',
       fecha_reconocimiento: payload.recognitionDate || new Date().toISOString().split('T')[0],
       dni_coordinador: coordinatorDni,
-      correo_coordinador: coordinatorDni ? `${coordinatorDni}@unmsm.edu.pe` : null,
+      correo_coordinador: coordinatorDni && !/^\d+$/.test(coordinatorDni) ? `${coordinatorDni}@unmsm.edu.pe` : null,
       url_vrip: payload.fuente === 'RAIS' ? 'https://vrip.unmsm.edu.pe' : null,
     })
     .select()

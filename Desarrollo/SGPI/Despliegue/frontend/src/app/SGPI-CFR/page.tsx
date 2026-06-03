@@ -2,7 +2,7 @@
 
 /**
  * @file page.tsx
- * @route /SGPI-CFR  (alias: /reports)
+ * @route /reportes  (alias: /reports)
  * @description Módulo de Generador de Reportes del SGPI.
  *
  * Estados de pantalla:
@@ -766,6 +766,7 @@ function VistaResultados({
           <ExportButton 
             context={getExportContext(result.params.tipo)} 
             label="Exportar" 
+            result={result}
           />
 
           {/* Guardar snapshot */}

@@ -2,7 +2,7 @@
 
 /**
  * @file page.tsx
- * @route /SGPI-CFSA/Modulo_de_auditoria
+ * @route /configuracion/Modulo_de_auditoria
  * @description Pantalla "Auditoría de Logs" del módulo de Configuración del Sistema.
  *
  * - Filtros sin valor inicial (fechas vacías, todos los eventos)

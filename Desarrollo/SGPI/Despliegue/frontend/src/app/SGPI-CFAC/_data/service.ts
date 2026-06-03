@@ -60,7 +60,13 @@ export async function getConvocatorias(filtros: AlertaFiltros): Promise<Convocat
     fechaCierre: c.fecha_cierre || new Date().toISOString().split('T')[0],
     fuente: 'VRIP',
     ultimaSync: c.created_at,
-    evidencias: [],
+    evidencias: (c.evidencias || []).map((e: any) => ({
+      id: String(e.id_evidencia),
+      fileName: e.nombre_archivo,
+      descripcion: e.tipo_evidencia || '',
+      fechaCarga: e.fecha_carga,
+      cargadoPor: 'Usuario',
+    })),
   }));
 
   // Filtro: estado
@@ -103,7 +109,13 @@ export async function getConvocatoriaById(id: string): Promise<Convocatoria | nu
       fechaCierre: res.fecha_cierre || new Date().toISOString().split('T')[0],
       fuente: 'VRIP',
       ultimaSync: res.created_at,
-      evidencias: [],
+      evidencias: (res.evidencias || []).map((e: any) => ({
+        id: String(e.id_evidencia),
+        fileName: e.nombre_archivo,
+        descripcion: e.tipo_evidencia || '',
+        fechaCarga: e.fecha_carga,
+        cargadoPor: 'Usuario',
+      })),
     };
   } catch (error) {
     return null;
@@ -139,7 +151,7 @@ export async function subirEvidencia(payload: EvidenciaPayload): Promise<Evidenc
   // Dado que el backend actual espera un JSON con los metadatos y no implementa subida multipart real de momento:
   const res = await apiClient.post<any>(`/calls/${payload.convocatoriaId}/evidence`, {
     id_convocatoria: parseInt(payload.convocatoriaId),
-    tipo_evidencia: payload.file.type || 'application/pdf',
+    tipo_evidencia: payload.descripcion || 'Sin descripción',
     nombre_archivo: payload.file.name,
     url_archivo: `local://${payload.file.name}`
   });

@@ -2,7 +2,7 @@
 
 /**
  * @file SGPI-CFIM/preview/page.tsx
- * @route /SGPI-CFIM/preview
+ * @route /importacion/preview
  * @description Pantalla de progreso y vista previa de importación.
  *
  * Flujo real:
@@ -20,6 +20,24 @@ import { MainLayout } from '@/SGPI-CFU/components/layout';
 import { Button, Badge } from '@/SGPI-CFU/components/ui';
 import { useAsyncJob } from '@/SGPI-CFU/lib/hooks/useAsyncJob';
 import { importEndpoints } from '@/SGPI-CFU/lib/api/endpoints';
+
+const AlertCircleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+const InfoCircleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipos
@@ -78,7 +96,7 @@ export default function ImportPreviewPage() {
   useEffect(() => {
     const raw = sessionStorage.getItem('import_meta');
     if (!raw) {
-      router.replace('/SGPI-CFIM');
+      router.replace('/importacion');
       return;
     }
     try {
@@ -88,7 +106,7 @@ export default function ImportPreviewPage() {
       // Iniciar polling del job_id obtenido en la pantalla anterior
       startJob(async () => ({ job_id: parsed.jobId }));
     } catch {
-      router.replace('/SGPI-CFIM');
+      router.replace('/importacion');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // solo al montar
@@ -105,7 +123,7 @@ export default function ImportPreviewPage() {
       errores:     (summary as any)?.errors    ?? 0,
     };
     sessionStorage.setItem('import_results', JSON.stringify(results));
-    router.push('/SGPI-CFIM/results');
+    router.push('/importacion/results');
   }, [isSuccess, summary, meta, router]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -113,7 +131,7 @@ export default function ImportPreviewPage() {
   const handleCancel = useCallback(() => {
     reset();
     sessionStorage.removeItem('import_meta');
-    router.push('/SGPI-CFIM');
+    router.push('/importacion');
   }, [reset, router]);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -243,7 +261,7 @@ export default function ImportPreviewPage() {
                   id="btn-ver-resultados"
                   variant="primary"
                   size="md"
-                  onClick={() => router.push('/SGPI-CFIM/results')}
+                  onClick={() => router.push('/importacion/results')}
                   aria-label="Ver resumen completo de resultados"
                   className="!bg-[#059669] hover:!bg-[#047857] active:!bg-[#065f46]"
                 >

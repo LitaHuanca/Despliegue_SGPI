@@ -2,7 +2,7 @@
 
 /**
  * @file investigador/[id]/page.tsx
- * @route /SGPI-CFB/investigador/[id]
+ * @route /busqueda/investigador/[id]
  * @description Pantalla de detalle de un Investigador / Docente.
  */
 
@@ -87,7 +87,7 @@ export default function InvestigadorDetailPage() {
   }, [params.id]);
 
   const handleBack = () =>
-    router.push(`/SGPI-CFB${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+    router.push(`/busqueda${query ? `?q=${encodeURIComponent(query)}` : ''}`);
 
   if (notFound) {
     return (

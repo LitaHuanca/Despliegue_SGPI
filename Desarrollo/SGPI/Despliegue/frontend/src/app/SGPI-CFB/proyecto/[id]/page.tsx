@@ -2,7 +2,7 @@
 
 /**
  * @file proyecto/[id]/page.tsx
- * @route /SGPI-CFB/proyecto/[id]
+ * @route /busqueda/proyecto/[id]
  * @description Pantalla de detalle de un Proyecto de Investigación.
  */
 
@@ -107,7 +107,7 @@ export default function ProyectoDetailPage() {
   }, [params.id]);
 
   const handleBack = () => {
-    router.push(`/SGPI-CFB${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+    router.push(`/busqueda${query ? `?q=${encodeURIComponent(query)}` : ''}`);
   };
 
   // ── 404 ─────────────────────────────────────────────────────────────────────

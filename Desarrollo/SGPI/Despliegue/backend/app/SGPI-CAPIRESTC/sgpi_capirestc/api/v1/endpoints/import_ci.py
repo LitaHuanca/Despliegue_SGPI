@@ -75,18 +75,14 @@ async def _run_sgpi_ci(job_id: str, file_path: str) -> None:
         return
 
     try:
-        # EtlProcessor.process() puede tardar hasta 20 minutos (consultas a RENACYT).
-        # Lo corremos en un thread:
-        def execute_etl():
-            processor = EtlProcessor(file_path=file_path)
-            # Pasamos upload_to_db=True para que efectivamente guarde en Supabase
-            return processor.process(upload_to_db=True)
+        # EtlProcessor.process() es asíncrono nativo
+        processor = EtlProcessor(file_path=file_path)
 
         # Simular avance mientras se resuelve (como EtlProcessor no reporta progreso
         # internamente, marcamos un 50% fijo mientras esperamos que termine).
         job.progress = 50 
         
-        resultado = await asyncio.to_thread(execute_etl)
+        resultado = await processor.process(upload_to_db=True)
 
         if "error" in resultado:
             job.status = "failed"

@@ -32,6 +32,7 @@ import type {
 
 import { supabase } from '../../../SGPI-CFU/lib/supabase';
 import { apiClient } from '../../../SGPI-CFU/lib/api/client';
+import { formatEmail } from '@/SGPI-CFU/lib/utils/formatters';
  
 const PAGE_SIZE = 10;
  
@@ -41,7 +42,7 @@ function mapToDocente(inv: any): DocenteInvestigador {
     dni: inv.dni,
     nombres: inv.nombres,
     apellidos: inv.apellidos,
-    email: `${inv.dni}@unmsm.edu.pe`,
+    email: formatEmail(inv.correo),
     departamento: inv.departamento_academico,
     nivelRenacyt: (inv.categoria_renacyt || 'Sin nivel') as NivelRenacyt,
     condicionSM: inv.investigador_sm ? 'SM' : 'No SM',
@@ -75,6 +76,7 @@ export interface PaginatedDocentes {
 export async function getDocentes(
   filtros: FiltrosDocentes,
   page: number = 1,
+  liveRenacyt: boolean = false,
 ): Promise<PaginatedDocentes> {
   const params = new URLSearchParams({
     page: String(page),
@@ -93,6 +95,9 @@ export async function getDocentes(
   if (filtros.estado) {
     params.append('estado', filtros.estado);
   }
+  if (liveRenacyt) {
+    params.append('live_renacyt', 'true');
+  }
 
   // Hacer la petición al backend local (FastAPI) a través de apiClient
   const data = await apiClient.get<{
@@ -100,7 +105,7 @@ export async function getDocentes(
     total: number;
     page: number;
     pages: number;
-  }>(`/investigators?${params.toString()}`);
+  }>(`/investigators?${params.toString()}`, { timeout: 30000 });
 
   return {
     items: (data.items || []).map(mapToDocente),

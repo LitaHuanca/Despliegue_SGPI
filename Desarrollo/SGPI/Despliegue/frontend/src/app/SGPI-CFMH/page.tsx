@@ -2,13 +2,13 @@
 
 /**
  * @file page.tsx
- * @route /SGPI-CFMH  (alias: /investigators)
+ * @route /investigadores  (alias: /investigators)
  * @description Directorio de Docentes/Investigadores — Pantalla 1 del flujo.
  *
  * Muestra el listado paginado con filtros, KPIs y accesos a:
- *   - Registrar Nuevo Docente → /SGPI-CFMH/nuevo
- *   - Editar perfil            → /SGPI-CFMH/[id]/editar
- *   - Ver perfil               → /SGPI-CFMH/[id]  (siguiente pantalla)
+ *   - Registrar Nuevo Docente → /investigadores/nuevo
+ *   - Editar perfil            → /investigadores/[id]/editar
+ *   - Ver perfil               → /investigadores/[id]  (siguiente pantalla)
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -251,12 +251,13 @@ export default function DocentesDirectorioPage() {
   const [stats,       setStats]       = useState<StatsDocentes | null>(null);
   const [isLoading,   setIsLoading]   = useState(true);
   const [page,        setPage]        = useState(1);
+  const [liveRenacyt, setLiveRenacyt] = useState(false);
 
   // ── Cargar datos ───────────────────────────────────────────────────────────
-  const cargar = useCallback(async (f: FiltrosDocentes, p: number) => {
+  const cargar = useCallback(async (f: FiltrosDocentes, p: number, liveRenacytParam: boolean = false) => {
     setIsLoading(true);
     try {
-      const [res, statsRes] = await Promise.all([getDocentes(f, p), getStats()]);
+      const [res, statsRes] = await Promise.all([getDocentes(f, p, liveRenacytParam), getStats()]);
       setResultado(res);
       setStats(statsRes);
     } finally {
@@ -264,25 +265,31 @@ export default function DocentesDirectorioPage() {
     }
   }, []);
 
-  useEffect(() => { cargar(DEFAULT_FILTROS, 1); }, [cargar]);
+  useEffect(() => { cargar(DEFAULT_FILTROS, 1, false); }, [cargar]);
 
   // ── Filtrar ────────────────────────────────────────────────────────────────
   const handleFiltrar = () => {
+    setLiveRenacyt(false);
     const f: FiltrosDocentes = {
       buscar: tempBuscar, departamento: tempDepto,
       nivelRenacyt: tempNivel, estado: tempEstado,
     };
     setFiltros(f);
     setPage(1);
-    cargar(f, 1);
+    cargar(f, 1, false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleFiltrar(); };
 
   const handlePage = (p: number) => {
     setPage(p);
-    cargar(filtros, p);
+    cargar(filtros, p, liveRenacyt);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const triggerLiveRenacyt = () => {
+    setLiveRenacyt(true);
+    cargar(filtros, 1, true);
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -303,7 +310,7 @@ export default function DocentesDirectorioPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push('/SGPI-CFMH/nuevo')}
+          onClick={() => router.push('/investigadores/nuevo')}
           className="flex items-center gap-2 px-4 py-2 rounded font-sans font-semibold text-[13px] text-white bg-[#001631] hover:bg-[#002b54] transition-colors flex-shrink-0"
           aria-label="Registrar nuevo docente investigador"
         >
@@ -420,9 +427,9 @@ export default function DocentesDirectorioPage() {
                 <tbody className="divide-y divide-outline-variant">
                   {resultado.items.map((doc) => (
                     <DocenteRow key={doc.id} doc={doc}
-                      onEdit={() => router.push(`/SGPI-CFMH/${doc.id}/editar`)}
-                      onView={() => router.push(`/SGPI-CFMH/${doc.id}`)}
-                      onImport={() => router.push(`/SGPI-CFMH/nuevo?dni=${doc.dni}&nombres=${encodeURIComponent(doc.nombres)}&apellidos=${encodeURIComponent(doc.apellidos)}&nivelRenacyt=${encodeURIComponent(doc.nivelRenacyt)}`)}
+                      onEdit={() => router.push(`/investigadores/${doc.id}/editar`)}
+                      onView={() => router.push(`/investigadores/${doc.id}`)}
+                      onImport={() => router.push(`/investigadores/nuevo?dni=${doc.dni}&nombres=${encodeURIComponent(doc.nombres)}&apellidos=${encodeURIComponent(doc.apellidos)}&nivelRenacyt=${encodeURIComponent(doc.nivelRenacyt)}`)}
                     />
                   ))}
                 </tbody>
@@ -447,9 +454,27 @@ export default function DocentesDirectorioPage() {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
             <p className="font-sans font-semibold text-[14px] text-on-surface mb-1">
-              No se encontraron docentes con los criterios seleccionados.
+              No se encontraron docentes con los criterios seleccionados en la base de datos local.
             </p>
-            <p className="font-sans text-[12px] text-on-surface-variant">Ajuste los filtros e intente nuevamente.</p>
+            {filtros.buscar.trim() && !liveRenacyt ? (
+              <>
+                <p className="font-sans text-[12px] text-on-surface-variant mb-4">
+                  Puede intentar buscar en la base de datos externa de RENACYT.
+                </p>
+                <button
+                  onClick={triggerLiveRenacyt}
+                  className="px-4 py-2 bg-[#001631] text-white rounded font-sans font-semibold text-[12px] hover:bg-[#002b54] transition-colors shadow-sm"
+                >
+                  Buscar en RENACYT
+                </button>
+              </>
+            ) : (
+              <p className="font-sans text-[12px] text-on-surface-variant">
+                {liveRenacyt
+                  ? 'No se encontraron registros del investigador en RENACYT.'
+                  : 'Ajuste los filtros o intente nuevamente.'}
+              </p>
+            )}
           </div>
         )}
 
@@ -516,7 +541,7 @@ function DocenteRow({ doc, onEdit, onView, onImport }: {
         <p className="font-sans font-bold text-[13px] text-on-surface uppercase leading-[18px]">
           {doc.apellidos}, {doc.nombres}
         </p>
-        <p className="font-sans text-[11px] text-on-surface-variant mt-0.5">{doc.email}</p>
+        {doc.email && <p className="font-sans text-[11px] text-on-surface-variant mt-0.5">{doc.email}</p>}
       </td>
 
       {/* Departamento */}

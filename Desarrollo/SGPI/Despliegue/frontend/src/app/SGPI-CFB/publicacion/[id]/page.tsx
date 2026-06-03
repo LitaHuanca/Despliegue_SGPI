@@ -2,7 +2,7 @@
 
 /**
  * @file publicacion/[id]/page.tsx
- * @route /SGPI-CFB/publicacion/[id]
+ * @route /busqueda/publicacion/[id]
  * @description Pantalla de detalle de una Publicación / Tesis.
  */
 
@@ -85,7 +85,7 @@ export default function PublicacionDetailPage() {
   }, [params.id]);
 
   const handleBack = () =>
-    router.push(`/SGPI-CFB${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+    router.push(`/busqueda${query ? `?q=${encodeURIComponent(query)}` : ''}`);
 
   if (notFound) {
     return (

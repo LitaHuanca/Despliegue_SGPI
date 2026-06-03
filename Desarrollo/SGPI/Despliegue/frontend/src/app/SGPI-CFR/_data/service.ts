@@ -7,6 +7,7 @@
  */
 
 import type { ReporteParams, ReporteResult, PasoCarga, RegistroDocente } from './types';
+import { getAccessToken } from '@/SGPI-CFU/lib/auth/storage';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -63,8 +64,8 @@ export async function generarReporte(params: ReporteParams): Promise<ReporteResu
     grupo_investigacion: params.grupoInvestigacion || undefined
   };
 
-  // Obtener token de auth desde donde se almacene (ej. localStorage)
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : '';
+  // Obtener token de auth desde donde se almacene
+  const token = getAccessToken() || '';
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -242,7 +243,7 @@ export async function guardarSnapshot(result: ReporteResult): Promise<void> {
     grupo_investigacion: result.params.grupoInvestigacion || undefined
   };
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : '';
+  const token = getAccessToken() || '';
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -284,20 +285,25 @@ export const UMBRAL_BAJO = 7;   // totalCarga < UMBRAL_BAJO → naranja/amarillo
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function obtenerCatalogos(): Promise<{ departamentos: string[], grupos: string[] }> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : '';
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const res = await fetch(`${API_URL}/api/v1/reports/catalogs`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    }
-  });
+  try {
+    const token = getAccessToken() || '';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const res = await fetch(`${API_URL}/api/v1/reports/catalogs`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
-  if (!res.ok) {
-    console.error('Error al obtener catálogos, usando predeterminados vacíos');
+    if (!res.ok) {
+      console.error('Error al obtener catálogos, usando predeterminados vacíos');
+      return { departamentos: [], grupos: [] };
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('Error al conectar con el servidor para obtener catálogos:', error);
     return { departamentos: [], grupos: [] };
   }
-
-  return res.json();
 }

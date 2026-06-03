@@ -2,7 +2,7 @@
 
 /**
  * @file [id]/page.tsx
- * @route /SGPI-CFAC/[id]
+ * @route /convocatorias/[id]
  * @description Pantalla de detalle de una Convocatoria de Alerta.
  *
  * Flujo (pasos 7-14):
@@ -396,7 +396,7 @@ export default function ConvocatoriaDetailPage() {
       <MainLayout title="Sistema de Gestión de Proyectos de Investigación">
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <p className="font-heading font-semibold text-h2 text-on-surface mb-2">Convocatoria no encontrada</p>
-          <button onClick={() => router.push('/SGPI-CFAC')}
+          <button onClick={() => router.push('/convocatorias')}
             className="font-sans text-[13px] font-medium text-[#2563eb] hover:underline">
             ← Volver a la lista
           </button>
@@ -447,7 +447,7 @@ export default function ConvocatoriaDetailPage() {
       {/* ── Volver ───────────────────────────────────────────────────────────── */}
       <div className="mb-4">
         <button
-          onClick={() => router.push('/SGPI-CFAC')}
+          onClick={() => router.push('/convocatorias')}
           className="inline-flex items-center gap-1.5 font-sans text-[13px] font-medium text-on-surface-variant hover:text-on-surface transition-colors"
           aria-label="Volver a la lista de convocatorias"
         >

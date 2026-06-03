@@ -2,7 +2,7 @@
 
 /**
  * @file [id]/ficha/page.tsx
- * @route /SGPI-CFGI/[id]/ficha
+ * @route /grupos/[id]/ficha
  * @description Ficha Consolidada de Grupo — usa el ExportFlow compartido de SGPI-CFE.
  */
 
@@ -177,7 +177,7 @@ export default function FichaGrupoPage() {
       <MainLayout title="" subtitle="">
         <div className="bg-red-50 text-red-800 p-6 rounded border border-red-200">
           <p className="font-sans font-bold">No se encontró el grupo.</p>
-          <button onClick={() => router.push('/SGPI-CFGI')} className="mt-3 text-[13px] underline cursor-pointer">Volver</button>
+          <button onClick={() => router.push('/grupos')} className="mt-3 text-[13px] underline cursor-pointer">Volver</button>
         </div>
       </MainLayout>
     );
@@ -204,7 +204,7 @@ export default function FichaGrupoPage() {
 
           <div className="flex items-center gap-2 flex-shrink-0 ml-4">
             <button
-              onClick={() => router.push('/SGPI-CFGI')}
+              onClick={() => router.push('/grupos')}
               className="flex items-center gap-1.5 border border-outline-variant hover:bg-surface-container font-sans text-[13px] text-on-surface px-4 py-2 rounded transition-colors cursor-pointer"
             >
               <BackIcon />

@@ -268,6 +268,19 @@ async def create_proyecto(obj_in: ProyectoCreate, db: AsyncSession = Depends(get
         logger.warning(f"[SGPI-CFPI] Duplicate project code rejected: {obj_in.codigo_proyecto!r}")
         raise HTTPException(status_code=400, detail="Proyecto with this code already exists")
 
+    # Validar duplicado de resolución
+    if obj_in.resolucion_aprobacion and obj_in.resolucion_aprobacion.strip():
+        result_res = await db.execute(
+            select(Proyecto).where(Proyecto.resolucion_aprobacion == obj_in.resolucion_aprobacion)
+        )
+        existing_res = result_res.scalars().first()
+        if existing_res:
+            logger.warning(f"[SGPI-CFPI] Duplicate resolution rejected: {obj_in.resolucion_aprobacion!r}")
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un proyecto registrado con este número de resolución."
+            )
+
     # Resolver codigo_grupo → id_grupo si se recibe codigo_grupo
     project_data = obj_in.model_dump()
     codigo_grupo = project_data.pop("codigo_grupo", None)
@@ -349,6 +362,22 @@ async def update_proyecto(codigo: str, obj_in: ProyectoUpdate, db: AsyncSession 
         raise HTTPException(status_code=404, detail="Proyecto no encontrado")
 
     update_data = obj_in.model_dump(exclude_unset=True)
+    
+    # Validar duplicado de resolución
+    if "resolucion_aprobacion" in update_data and update_data["resolucion_aprobacion"] and update_data["resolucion_aprobacion"].strip():
+        result_res = await db.execute(
+            select(Proyecto).where(
+                Proyecto.resolucion_aprobacion == update_data["resolucion_aprobacion"],
+                Proyecto.codigo_proyecto != codigo
+            )
+        )
+        existing_res = result_res.scalars().first()
+        if existing_res:
+            logger.warning(f"[SGPI-CFPI] Duplicate resolution rejected during update: {update_data['resolucion_aprobacion']!r}")
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un proyecto registrado con este número de resolución."
+            )
     
     # 1. Resolver codigo_grupo → id_grupo si se recibe
     codigo_grupo = update_data.pop("codigo_grupo", None)

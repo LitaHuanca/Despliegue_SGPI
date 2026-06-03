@@ -2,7 +2,7 @@
 
 /**
  * @file nuevo/page.tsx
- * @route /SGPI-CFPI/nuevo
+ * @route /proyectos/nuevo
  * @description Registro de Nuevo Proyecto de Investigación — Carga Manual (Tabs: Ficha Técnica y Financiera / Equipo y Grupo)
  */
 
@@ -302,7 +302,7 @@ export default function NuevoProyectoPage() {
         fuente: 'Manual'
       });
       setShowToast(true);
-      setTimeout(() => { router.push(`/SGPI-CFPI/${formattedCode}`); }, 2000);
+      setTimeout(() => { router.push(`/proyectos/${formattedCode}`); }, 2000);
     } catch (err: any) {
       setErrors([err.message || 'Error al guardar el proyecto.']);
       setGuardando(false);
@@ -318,7 +318,7 @@ export default function NuevoProyectoPage() {
           {/* Izquierda */}
           <div>
             <button
-              onClick={() => router.push('/SGPI-CFPI')}
+              onClick={() => router.push('/proyectos')}
               className="inline-flex items-center gap-1 text-[13px] font-sans text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer mb-2"
               aria-label="Volver a la bandeja principal"
             >
@@ -339,7 +339,7 @@ export default function NuevoProyectoPage() {
           <div className="flex gap-2 flex-shrink-0 ml-4">
             <button
               type="button"
-              onClick={() => router.push('/SGPI-CFPI')}
+              onClick={() => router.push('/proyectos')}
               className="border border-[#e2e8f0] hover:bg-slate-50 font-sans text-[13px] text-[#475569] px-4 py-2 rounded transition-colors cursor-pointer"
             >
               Cancelar
@@ -541,7 +541,7 @@ export default function NuevoProyectoPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="grupo-vinculado" className="block font-sans font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mb-1.5">
-                    GRUPO DE INVESTIGACIÓN (CU05)
+                    GRUPO DE INVESTIGACIÓN
                   </label>
                   <select
                     id="grupo-vinculado"
@@ -564,7 +564,7 @@ export default function NuevoProyectoPage() {
 
                 <div>
                   <label htmlFor="resp-principal" className="block font-sans font-bold text-[10px] text-on-surface-variant uppercase tracking-widest mb-1.5">
-                    RESPONSABLE PRINCIPAL (CU04)
+                    RESPONSABLE PRINCIPAL
                   </label>
                   <select
                     id="resp-principal"

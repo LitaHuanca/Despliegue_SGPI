@@ -2,7 +2,7 @@
 
 /**
  * @file nuevo/page.tsx
- * @route /SGPI-CFMH/nuevo
+ * @route /investigadores/nuevo
  * @description Formulario de registro de nuevo Docente/Investigador.
  *
  * Secciones:
@@ -340,7 +340,7 @@ function NuevoDocentePageContent() {
         }],
       });
       setShowModal(false);
-      router.push('/SGPI-CFMH');
+      router.push('/investigadores');
     } catch {
       setGlobalError('Error al registrar el docente. Intente nuevamente.');
       setShowModal(false);
@@ -371,7 +371,7 @@ function NuevoDocentePageContent() {
           </p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <button onClick={() => router.push('/SGPI-CFMH')}
+          <button onClick={() => router.push('/investigadores')}
             className="border border-[#e2e8f0] hover:bg-slate-50 font-sans text-[13px] text-[#475569] px-4 py-2 rounded transition-colors cursor-pointer"
             type="button"
             aria-label="Cancelar registro">

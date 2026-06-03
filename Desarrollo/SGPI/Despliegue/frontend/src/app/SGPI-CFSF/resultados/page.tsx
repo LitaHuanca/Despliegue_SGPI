@@ -281,7 +281,7 @@ export default function ResultadosSincronizacionPage() {
             <br />
             <button
               className="mt-2 text-[#001631] underline text-sm"
-              onClick={() => router.push('/SGPI-CFSF')}
+              onClick={() => router.push('/sincronizacion')}
             >
               Ir al Panel de Sincronización
             </button>
@@ -397,7 +397,7 @@ export default function ResultadosSincronizacionPage() {
           <Button
             variant="primary"
             size="md"
-            onClick={() => router.push('/SGPI-CFSF/cuarentena')}
+            onClick={() => router.push('/sincronizacion/cuarentena')}
           >
             Revisar Cuarentena →
           </Button>
@@ -407,7 +407,7 @@ export default function ResultadosSincronizacionPage() {
           variant={totalCuarentena > 0 ? "secondary" : "primary"}
           size="md"
           iconRight={<ArrowRightIcon />}
-          onClick={() => router.push('/SGPI-CFSF')}
+          onClick={() => router.push('/sincronizacion')}
         >
           Volver al Panel
         </Button>

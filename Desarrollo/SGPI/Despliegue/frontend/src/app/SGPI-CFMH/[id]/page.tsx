@@ -2,11 +2,11 @@
 
 /**
  * @file [id]/page.tsx
- * @route /SGPI-CFMH/[id]
+ * @route /investigadores/[id]
  * @description Perfil editable de Docente/Investigador.
  * Accesible desde:
  *   - Ícono 👁 (vista/edición combinada)
- *   - Ícono ✏  (alias /SGPI-CFMH/[id]/editar → redirige aquí)
+ *   - Ícono ✏  (alias /investigadores/[id]/editar → redirige aquí)
  *
  * Secciones:
  *   1. Información General (DNI readonly + validado, nombres, apellidos, depto, estado)
@@ -266,7 +266,7 @@ export default function DocentePerfilPage() {
         })),
       });
       setAlert({ msg: 'Perfil guardado exitosamente.', type: 'success' });
-      setTimeout(() => router.push('/SGPI-CFMH'), 1200);
+      setTimeout(() => router.push('/investigadores'), 1200);
     } catch {
       setAlert({ msg: 'Error al guardar el perfil. Intente nuevamente.', type: 'error' });
     } finally {
@@ -295,7 +295,7 @@ export default function DocentePerfilPage() {
       <MainLayout title="Sistema de Gestión de Proyectos de Investigación">
         <div className="text-center py-20">
           <p className="font-sans font-semibold text-[14px] text-on-surface mb-2">Docente no encontrado.</p>
-          <button onClick={() => router.push('/SGPI-CFMH')}
+          <button onClick={() => router.push('/investigadores')}
             className="font-sans text-[13px] text-[#2563eb] hover:underline">
             Volver al directorio
           </button>
@@ -316,7 +316,7 @@ export default function DocentePerfilPage() {
           <h1 className="font-heading font-semibold text-h1 text-on-surface">
             Perfil de Docente/Investigador
           </h1>
-          <button onClick={() => router.push('/SGPI-CFMH')}
+          <button onClick={() => router.push('/investigadores')}
             className="flex items-center gap-1.5 px-4 py-2 rounded font-sans font-semibold text-[13px] text-on-surface border border-outline-variant hover:bg-surface-container transition-colors"
             aria-label="Volver al directorio">
             <BackIcon /> Volver al directorio
@@ -449,7 +449,7 @@ export default function DocentePerfilPage() {
                 </p>
               </div>
               <button
-                onClick={() => router.push(`/SGPI-CFMH/${id}/historial`)}
+                onClick={() => router.push(`/investigadores/${id}/historial`)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded font-sans font-semibold text-[12px] text-white bg-[#001631] hover:bg-[#002b54] transition-colors"
                 aria-label="Ver historial completo de proyectos del investigador"
               >
@@ -509,7 +509,7 @@ export default function DocentePerfilPage() {
 
       {/* ── Barra fija inferior ──────────────────────────────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-outline-variant shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
-        <button onClick={() => router.push('/SGPI-CFMH')}
+        <button onClick={() => router.push('/investigadores')}
           className="px-5 py-2 rounded font-sans font-semibold text-[12px] text-on-surface border border-outline-variant hover:bg-surface-container transition-colors uppercase tracking-wide"
           aria-label="Cancelar modificaciones">
           Cancelar Modificaciones

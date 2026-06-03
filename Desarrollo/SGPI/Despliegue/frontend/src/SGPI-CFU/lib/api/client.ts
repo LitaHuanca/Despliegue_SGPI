@@ -113,7 +113,11 @@ async function request<T>(
 
   // AbortController para implementar timeout
   const controller = new AbortController();
-  const timeoutId  = setTimeout(() => controller.abort(), timeout);
+  let isTimeout = false;
+  const timeoutId  = setTimeout(() => {
+    isTimeout = true;
+    controller.abort();
+  }, timeout);
 
   // Headers base con autenticación JWT
   const token   = getAccessToken();
@@ -163,7 +167,16 @@ async function request<T>(
       // 401 → Token inválido o expirado → limpiar sesión y redirigir
       if (response.status === 401) {
         clearAllSessionData();
-        globalCallbacks.onUnauthorized?.();
+        if (globalCallbacks.onUnauthorized) {
+          // El hook useAuth ya está montado: delegar la redirección al router de Next.js
+          globalCallbacks.onUnauthorized();
+        } else {
+          // El hook aún no se montó (p.ej. sesión expirada antes de hidratar):
+          // redirigir directamente con hard navigation para garantizar que se llega al login
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/login?reason=sesion_expirada';
+          }
+        }
         // Devolver una promesa que nunca se resuelve para evitar que
         // la aplicación React lance un Unhandled Runtime Error mientras el router redirige.
         return new Promise(() => {}) as Promise<T>;
@@ -203,17 +216,22 @@ async function request<T>(
     // Re-lanzar ApiClientError directamente (ya está formateado)
     if (error instanceof ApiClientError) throw error;
 
-    // Timeout (AbortError)
+    // Timeout o Abort
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new ApiClientError(
-        {
-          success:   false,
-          error:     'La operación tardó demasiado. Verifique su conexión e intente nuevamente.',
-          code:      'REQUEST_TIMEOUT',
-          timestamp: new Date().toISOString(),
-        },
-        408
-      );
+      if (isTimeout) {
+        throw new ApiClientError(
+          {
+            success:   false,
+            error:     'La operación tardó demasiado. Verifique su conexión e intente nuevamente.',
+            code:      'REQUEST_TIMEOUT',
+            timestamp: new Date().toISOString(),
+          },
+          408
+        );
+      } else {
+        // Aborto manual (ej. al escribir rápido en la búsqueda)
+        throw error;
+      }
     }
 
     // Error de red (sin conexión, CORS, etc.)
@@ -314,7 +332,11 @@ export const apiClient = {
     const timeout = config?.timeout ?? HEAVY_TIMEOUT_MS;
 
     const controller = new AbortController();
-    const timeoutId  = setTimeout(() => controller.abort(), timeout);
+    let isTimeout = false;
+    const timeoutId  = setTimeout(() => {
+      isTimeout = true;
+      controller.abort();
+    }, timeout);
 
     const token   = getAccessToken();
     const headers: Record<string, string> = {};
@@ -352,7 +374,13 @@ export const apiClient = {
 
         if (response.status === 401) {
           clearAllSessionData();
-          globalCallbacks.onUnauthorized?.();
+          if (globalCallbacks.onUnauthorized) {
+            globalCallbacks.onUnauthorized();
+          } else {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login?reason=sesion_expirada';
+            }
+          }
           // Devolver una promesa que nunca se resuelve para evitar que
           // la aplicación React lance un Unhandled Runtime Error mientras el router redirige.
           return new Promise(() => {}) as Promise<T>;
@@ -389,15 +417,19 @@ export const apiClient = {
       if (error instanceof ApiClientError) throw error;
 
       if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new ApiClientError(
-          {
-            success:   false,
-            error:     'La subida del archivo tardó demasiado. Intente nuevamente.',
-            code:      'REQUEST_TIMEOUT',
-            timestamp: new Date().toISOString(),
-          },
-          408
-        );
+        if (isTimeout) {
+          throw new ApiClientError(
+            {
+              success:   false,
+              error:     'La subida del archivo tardó demasiado. Intente nuevamente.',
+              code:      'REQUEST_TIMEOUT',
+              timestamp: new Date().toISOString(),
+            },
+            408
+          );
+        } else {
+          throw error;
+        }
       }
 
       throw new ApiClientError(

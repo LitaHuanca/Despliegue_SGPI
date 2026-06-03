@@ -1,4 +1,7 @@
 import asyncio
+import os
+import sys
+import re
 from typing import List, Dict, Any, Optional
 from sqlalchemy import select, or_, and_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +9,19 @@ from datetime import datetime, date
 
 from app.models.domain import Investigador, Proyecto, GrupoInvestigacion, Publicacion, Tesis
 from .schemas import SearchRequest, UnifiedSearchItem, SearchResponse
+from app.core.logger import logger
+
+# Import dynamic logic for RENACYT connector
+current_dir = os.path.dirname(os.path.abspath(__file__))
+csapiren_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'etl', 'connectors', 'SGPI-CSAPIREN'))
+if csapiren_path not in sys.path:
+    sys.path.insert(0, csapiren_path)
+
+try:
+    from renacyt_connector.api import RenacytConnector
+except ImportError:
+    RenacytConnector = None
+
 
 class SearchEngine:
     @staticmethod
@@ -89,6 +105,10 @@ class SearchEngine:
         return "0000-00-00"
 
     async def search(self, db: AsyncSession, req: SearchRequest) -> SearchResponse:
+        logger.info(
+            f"SearchEngine.search: Iniciando motor de búsqueda "
+            f"para query='{req.q}'"
+        )
         q_term = f"%{req.q}%"
         results: List[UnifiedSearchItem] = []
         
@@ -97,55 +117,148 @@ class SearchEngine:
         
         # 1. Query Investigadores
         if "Investigador" in categories_to_query:
-            # Check source filters (RENACYT or RAIS or Manual)
-            # If source is specified, check if we need to query this table at all
-            stmt = select(Investigador).where(
-                or_(
-                    Investigador.nombres.ilike(q_term),
-                    Investigador.apellidos.ilike(q_term),
-                    Investigador.dni.ilike(q_term),
-                    Investigador.departamento_academico.ilike(q_term),
-                    Investigador.codigo_renacyt.ilike(q_term)
-                )
-            )
+            # Check if we should execute live search
+            is_live_renacyt = req.live_renacyt or (req.source and "RENACYT_LIVE" in req.source)
             
-            # Filter by status
-            if req.status:
-                stmt = stmt.where(Investigador.estado_vigencia.in_(req.status))
+            if is_live_renacyt:
+                # Query RENACYT connector
+                live_results = []
+                if RenacytConnector is not None:
+                    try:
+                        logger.info(f"SearchEngine: Iniciando consulta en vivo a RENACYT para query '{req.q}'")
+                        connector = RenacytConnector(verify_ssl=False)
+                        connector.rate_limit_delay = 0.1
+                        
+                        clean_query = req.q.strip()
+                        is_dni = bool(re.match(r'^\d{8}$', clean_query))
+                        
+                        records = []
+                        if is_dni:
+                            r = await connector.search_by_dni(clean_query)
+                            if r:
+                                records = [r]
+                        else:
+                            res = await connector.search_by_fullname(clean_query, page=1, page_size=50)
+                            records = res.get("data", []) if res else []
+                            
+                        for r in records:
+                            doc_id = r.get("numero_documento") or r.get("codigo_registro") or str(r.get("id", ""))
+                            title = f"{r.get('apellido_paterno', '')} {r.get('apellido_materno', '')}, {r.get('nombres', '')}".strip()
+                            title = " ".join(title.split()) # normalize whitespace
+                            
+                            is_sm = False
+                            for inst in [r.get("institucion_laboral_principal"), r.get("institucion_laboral_actual")]:
+                                if inst and any(x in str(inst).upper() for x in ["SAN MARCOS", "UNMSM"]):
+                                    is_sm = True
+                                    break
+                                    
+                            date_str = r.get("fecha_ingreso_renacyt") or r.get("fecha_inicio_vigencia")
+                            
+                            # Filter by status if requested
+                            status_val = r.get("condicion") or "Activo"
+                            if req.status and status_val not in req.status:
+                                continue
+                                
+                            # Filter by years if requested
+                            if date_str:
+                                try:
+                                    year_val = int(date_str.split("-")[0])
+                                    if req.anio_inicio and year_val < req.anio_inicio:
+                                        continue
+                                    if req.anio_fin and year_val > req.anio_fin:
+                                        continue
+                                except (ValueError, IndexError):
+                                    pass
+                                    
+                            live_results.append(UnifiedSearchItem(
+                                id=doc_id,
+                                title=title,
+                                category="Investigador",
+                                source="Conector RENACYT",
+                                status=status_val,
+                                date=date_str,
+                                details={
+                                    "departamento_academico": r.get("institucion_laboral_principal") or "Externo (RENACYT)",
+                                    "categoria_renacyt": r.get("nivel") or r.get("grupo") or "Sin nivel",
+                                    "codigo_renacyt": r.get("codigo_registro"),
+                                    "investigador_sm": is_sm,
+                                    "tiene_deuda_gi": False,
+                                    "tiene_deuda_pi": False,
+                                    "is_external": True
+                                }
+                            ))
+                        logger.info(f"SearchEngine: Consulta RENACYT en vivo retornó {len(live_results)} resultados")
+                    except Exception as e:
+                        logger.error(f"SearchEngine: Error consultando RENACYT en vivo: {e}", exc_info=True)
+                else:
+                    logger.error("SearchEngine: RenacytConnector no está importado o disponible.")
                 
-            db_res = await db.execute(stmt)
-            for inv in db_res.scalars().all():
-                src = self._deduce_source_investigador(inv)
-                # Filter by source
-                if req.source and src not in req.source:
-                    continue
+                results.extend(live_results)
+            else:
+                # Normal database query
+                stmt = select(Investigador).where(
+                    or_(
+                        Investigador.nombres.ilike(q_term),
+                        Investigador.apellidos.ilike(q_term),
+                        Investigador.dni.ilike(q_term),
+                        Investigador.departamento_academico.ilike(q_term),
+                        Investigador.codigo_renacyt.ilike(q_term)
+                    )
+                )
                 
-                # Check years (Investigadores don't have explicit years, but we can match created_at year if filter is set)
-                inv_year = inv.created_at.year if inv.created_at else None
-                if req.anio_inicio and (not inv_year or inv_year < req.anio_inicio):
-                    continue
-                if req.anio_fin and (not inv_year or inv_year > req.anio_fin):
-                    continue
+                # Filter by status
+                if req.status:
+                    stmt = stmt.where(Investigador.estado_vigencia.in_(req.status))
+                    
+                db_res = await db.execute(stmt)
+                raw_invs = db_res.scalars().all()
+                logger.info(
+                    f"SearchEngine: Investigadores BD retornó {len(raw_invs)} "
+                    f"registros para query '{req.q}'"
+                )
+                inv_added = 0
+                for inv in raw_invs:
+                    src = self._deduce_source_investigador(inv)
+                    # Filter by source
+                    if req.source and src not in req.source:
+                        continue
 
-                date_str = inv.created_at.strftime("%Y-%m-%d") if inv.created_at else None
-                
-                results.append(UnifiedSearchItem(
-                    id=inv.dni,
-                    title=f"{inv.apellidos}, {inv.nombres}",
-                    category="Investigador",
-                    source=src,
-                    status=inv.estado_vigencia,
-                    date=date_str,
-                    details={
-                        "departamento_academico": inv.departamento_academico,
-                        "categoria_renacyt": inv.categoria_renacyt,
-                        "codigo_renacyt": inv.codigo_renacyt,
-                        "investigador_sm": inv.investigador_sm,
-                        "tiene_deuda_gi": inv.tiene_deuda_gi,
-                        "tiene_deuda_pi": inv.tiene_deuda_pi,
-                        "is_external": inv.is_external
-                    }
-                ))
+                    # Excluir registros externos (temporal de búsqueda RENACYT previa)
+                    # para que sólo aparezcan investigadores formalizados en la BD local.
+                    if inv.is_external:
+                        continue
+                    
+                    # Check years (Investigadores don't have explicit years, but we can match created_at year if filter is set)
+                    inv_year = inv.created_at.year if inv.created_at else None
+                    if req.anio_inicio and (not inv_year or inv_year < req.anio_inicio):
+                        continue
+                    if req.anio_fin and (not inv_year or inv_year > req.anio_fin):
+                        continue
+    
+                    date_str = inv.created_at.strftime("%Y-%m-%d") if inv.created_at else None
+                    
+                    results.append(UnifiedSearchItem(
+                        id=inv.dni,
+                        title=f"{inv.apellidos}, {inv.nombres}",
+                        category="Investigador",
+                        source=src,
+                        status=inv.estado_vigencia,
+                        date=date_str,
+                        details={
+                            "departamento_academico": inv.departamento_academico,
+                            "categoria_renacyt": inv.categoria_renacyt,
+                            "codigo_renacyt": inv.codigo_renacyt,
+                            "investigador_sm": inv.investigador_sm,
+                            "tiene_deuda_gi": inv.tiene_deuda_gi,
+                            "tiene_deuda_pi": inv.tiene_deuda_pi,
+                            "is_external": inv.is_external
+                        }
+                    ))
+                    inv_added += 1
+                logger.info(
+                    f"SearchEngine: Investigadores filtrados - "
+                    f"Agregados: {inv_added}/{len(raw_invs)}"
+                )
 
         # 2. Query Proyectos
         if "Proyecto" in categories_to_query:
@@ -181,7 +294,13 @@ class SearchEngine:
                 )
                 
             db_res = await db.execute(stmt)
-            for proj in db_res.scalars().all():
+            raw_projs = db_res.scalars().all()
+            logger.info(
+                f"SearchEngine: Proyectos BD retornó {len(raw_projs)} "
+                f"registros para query '{req.q}'"
+            )
+            proj_added = 0
+            for proj in raw_projs:
                 src = self._deduce_source_proyecto(proj)
                 if req.source and src not in req.source:
                     continue
@@ -203,6 +322,11 @@ class SearchEngine:
                         "anio_convocatoria": proj.anio_convocatoria
                     }
                 ))
+                proj_added += 1
+            logger.info(
+                f"SearchEngine: Proyectos filtrados - "
+                f"Agregados: {proj_added}/{len(raw_projs)}"
+            )
 
         # 3. Query Grupos de Investigacion
         if "Grupo" in categories_to_query:
@@ -226,7 +350,13 @@ class SearchEngine:
                 stmt = stmt.where(extract('year', GrupoInvestigacion.fecha_reconocimiento) <= req.anio_fin)
                 
             db_res = await db.execute(stmt)
-            for grupo in db_res.scalars().all():
+            raw_grupos = db_res.scalars().all()
+            logger.info(
+                f"SearchEngine: Grupos BD retornó {len(raw_grupos)} "
+                f"registros para query '{req.q}'"
+            )
+            grupo_added = 0
+            for grupo in raw_grupos:
                 src = self._deduce_source_grupo(grupo)
                 if req.source and src not in req.source:
                     continue
@@ -247,6 +377,11 @@ class SearchEngine:
                         "lineas_investigacion": grupo.lineas_investigacion
                     }
                 ))
+                grupo_added += 1
+            logger.info(
+                f"SearchEngine: Grupos filtrados - "
+                f"Agregados: {grupo_added}/{len(raw_grupos)}"
+            )
 
         # 4. Query Publicaciones
         if "Publicacion" in categories_to_query:
@@ -274,7 +409,13 @@ class SearchEngine:
                 stmt = stmt.where(extract('year', Publicacion.fecha_publicacion) <= req.anio_fin)
                 
             db_res = await db.execute(stmt)
-            for pub in db_res.scalars().all():
+            raw_pubs = db_res.scalars().all()
+            logger.info(
+                f"SearchEngine: Publicaciones BD retornó {len(raw_pubs)} "
+                f"registros para query '{req.q}'"
+            )
+            pub_added = 0
+            for pub in raw_pubs:
                 src = self._deduce_source_publicacion(pub)
                 if req.source and src not in req.source:
                     continue
@@ -297,6 +438,11 @@ class SearchEngine:
                         "indexacion": pub.indexacion
                     }
                 ))
+                pub_added += 1
+            logger.info(
+                f"SearchEngine: Publicaciones filtradas - "
+                f"Agregados: {pub_added}/{len(raw_pubs)}"
+            )
 
         # 5. Query Tesis
         if "Tesis" in categories_to_query:
@@ -318,7 +464,13 @@ class SearchEngine:
                 stmt = stmt.where(Tesis.anio_publicacion <= req.anio_fin)
                 
             db_res = await db.execute(stmt)
-            for tesis in db_res.scalars().all():
+            raw_tesis = db_res.scalars().all()
+            logger.info(
+                f"SearchEngine: Tesis BD retornó {len(raw_tesis)} "
+                f"registros para query '{req.q}'"
+            )
+            tesis_added = 0
+            for tesis in raw_tesis:
                 src = self._deduce_source_tesis(tesis)
                 if req.source and src not in req.source:
                     continue
@@ -341,6 +493,11 @@ class SearchEngine:
                         "url_cybertesis": tesis.url_cybertesis
                     }
                 ))
+                tesis_added += 1
+            logger.info(
+                f"SearchEngine: Tesis filtradas - "
+                f"Agregados: {tesis_added}/{len(raw_tesis)}"
+            )
 
         # --- Relevance & Sorting ---
         # If sort_by is relevance, calculate and sort by relevance score
@@ -361,6 +518,18 @@ class SearchEngine:
         page = req.page
         total_pages = (total_results + limit - 1) // limit if total_results > 0 else 0
         
+        # Calculate counts per category on the filtered results
+        category_counts = {
+            "Investigador": 0,
+            "Proyecto": 0,
+            "Grupo": 0,
+            "Publicacion": 0,
+            "Tesis": 0
+        }
+        for item in results:
+            if item.category in category_counts:
+                category_counts[item.category] += 1
+
         start_idx = (page - 1) * limit
         end_idx = start_idx + limit
         paginated_results = results[start_idx:end_idx]
@@ -370,5 +539,6 @@ class SearchEngine:
             page=page,
             limit=limit,
             total_pages=total_pages,
-            results=paginated_results
+            results=paginated_results,
+            category_counts=category_counts
         )

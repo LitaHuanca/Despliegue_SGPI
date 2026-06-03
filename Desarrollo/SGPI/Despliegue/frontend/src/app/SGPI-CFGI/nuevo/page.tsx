@@ -2,7 +2,7 @@
 
 /**
  * @file nuevo/page.tsx
- * @route /SGPI-CFGI/nuevo
+ * @route /grupos/nuevo
  * @description Registro de Nuevo Grupo de Investigación — Carga Manual (Tabs: Datos Maestros / Gestión de Miembros)
  */
 
@@ -12,6 +12,7 @@ import { MainLayout } from '@/SGPI-CFU/components/layout';
 import type { MiembroGrupo, RolMiembro, InvestigatorPadron, EstadoGrupo, FuenteOrigen } from '../_data/types';
 import { buscarInvestigadores, crearGrupo, validarCodigoGrupo } from '../_data/service';
 import { LINEAS_INVESTIGACION } from '../_data/mock';
+import { useAuth } from '@/SGPI-CFU/lib/hooks';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Íconos SVG
@@ -88,6 +89,14 @@ const ClearIcon = () => (
 
 export default function NuevoGrupoPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
+
+  // Redirigir si el usuario no es administrador
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== 'admin')) {
+      router.replace('/grupos');
+    }
+  }, [user, isLoading, router]);
 
   const [activeTab, setActiveTab] = useState<'datos-maestros' | 'miembros'>('datos-maestros');
 
@@ -224,13 +233,29 @@ export default function NuevoGrupoPage() {
       });
       setShowToast(true);
       setTimeout(() => {
-        router.push(`/SGPI-CFGI/${code.trim().toUpperCase()}/ficha`);
+        router.push(`/grupos/${code.trim().toUpperCase()}/ficha`);
       }, 2000);
     } catch (err: any) {
       setErrors([err.message || 'Error al guardar el grupo.']);
       setGuardando(false);
     }
   };
+
+  if (isLoading || !user || user.role !== 'admin') {
+    return (
+      <MainLayout title="" subtitle="">
+        <div className="flex h-[50vh] items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-3">
+            <svg className="animate-spin h-8 w-8 text-[#001631]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="font-sans text-[14px] text-[#475569]">Verificando credenciales...</span>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout title="" subtitle="">
@@ -243,7 +268,7 @@ export default function NuevoGrupoPage() {
           <div>
             {/* Back link */}
             <button
-              onClick={() => router.push('/SGPI-CFGI')}
+              onClick={() => router.push('/grupos')}
               className="inline-flex items-center gap-1 text-[13px] font-sans text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer mb-2"
               aria-label="Volver a la bandeja principal"
             >
@@ -265,20 +290,22 @@ export default function NuevoGrupoPage() {
           <div className="flex gap-2 flex-shrink-0 ml-4">
             <button
               type="button"
-              onClick={() => router.push('/SGPI-CFGI')}
+              onClick={() => router.push('/grupos')}
               className="border border-[#e2e8f0] hover:bg-slate-50 font-sans text-[13px] text-[#475569] px-4 py-2 rounded transition-colors cursor-pointer"
             >
               Cancelar
             </button>
-            <button
-              type="button"
-              onClick={handleGuardar}
-              disabled={guardando}
-              className="flex items-center gap-2 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer disabled:opacity-60"
-            >
-              <CheckIcon />
-              {guardando ? 'Guardando...' : 'Guardar y Validar'}
-            </button>
+            {user?.role === 'admin' && (
+              <button
+                type="button"
+                onClick={handleGuardar}
+                disabled={guardando}
+                className="flex items-center gap-2 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer disabled:opacity-60"
+              >
+                <CheckIcon />
+                {guardando ? 'Guardando...' : 'Guardar y Validar'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -476,7 +503,7 @@ export default function NuevoGrupoPage() {
               {/* Buscador en padrón */}
               <div>
                 <p className="font-sans font-bold text-[10px] text-on-surface uppercase tracking-widest mb-1.5">
-                  Buscar en Padrón de Investigadores (CUO4)
+                  Buscar en Padrón de Investigadores
                 </p>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1 relative max-w-xl">

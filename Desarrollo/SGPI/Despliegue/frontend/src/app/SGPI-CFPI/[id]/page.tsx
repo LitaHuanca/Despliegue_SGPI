@@ -2,7 +2,7 @@
 
 /**
  * @file [id]/page.tsx
- * @route /SGPI-CFPI/[id]
+ * @route /proyectos/[id]
  * @description Expediente Digital de Proyecto — Vista consolidada del proyecto, hitos e historial de auditoría.
  */
 
@@ -95,7 +95,7 @@ export default function ExpedienteDigitalPage() {
     setSearchError(null);
     
     let defaultQuery = '';
-    const tesista = proyecto?.miembros?.find(m => m.rol === 'Tesista vinculado' || m.rol === 'Tesista');
+    const tesista = proyecto?.miembros?.find(m => (m.rol as string) === 'Tesista vinculado' || (m.rol as string) === 'Tesista');
     if (tesista) {
       defaultQuery = tesista.nombre;
     } else {
@@ -231,7 +231,7 @@ export default function ExpedienteDigitalPage() {
       <MainLayout title="Expediente Digital de Proyecto" subtitle="">
         <div className="bg-red-50 text-red-800 p-6 rounded border border-red-200">
           <p className="font-sans font-bold">Proyecto no encontrado.</p>
-          <button onClick={() => router.push('/SGPI-CFPI')} className="mt-3 text-[13px] font-bold text-red-700 underline cursor-pointer">
+          <button onClick={() => router.push('/proyectos')} className="mt-3 text-[13px] font-bold text-red-700 underline cursor-pointer">
             Volver a la bandeja
           </button>
         </div>
@@ -262,7 +262,7 @@ export default function ExpedienteDigitalPage() {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => router.push('/SGPI-CFPI')}
+              onClick={() => router.push('/proyectos')}
               className="flex items-center gap-1.5 px-4 py-2 rounded font-sans font-bold text-[13px] text-on-surface border border-outline-variant hover:bg-slate-50 transition-colors cursor-pointer"
               aria-label="Volver a la Bandeja"
             >

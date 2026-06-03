@@ -35,6 +35,7 @@ class Investigador(Base):
     estado_vigencia = Column(String(20), nullable=False, default='Activo')
     tiene_deuda_gi = Column(Boolean, default=False)
     tiene_deuda_pi = Column(Boolean, default=False)
+    correo = Column(String(255))
     is_external = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -136,6 +137,8 @@ class Convocatoria(Base):
     cambios_cronograma = Column(JSON)
     estado_convocatoria = Column(String(50), default='Abierta')
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    evidencias = relationship("EvidenciaDifusion", backref="convocatoria", cascade="all, delete-orphan", lazy="selectin")
 
 class Publicacion(Base):
     __tablename__ = 'publicacion'

@@ -13,7 +13,16 @@ class NumberedCanvas(canvas.Canvas):
         self.logo_path = None
 
     def showPage(self):
-        self._saved_page_states.append(dict(self.__dict__))
+        state = dict(self.__dict__)
+        # Create copies of mutable structures to prevent data loss on in-place mutations
+        state['_code'] = list(self._code)
+        state['_codeStack'] = list(self._codeStack)
+        state['_formsinuse'] = list(self._formsinuse)
+        state['_annotationrefs'] = list(self._annotationrefs)
+        state['_colorsUsed'] = dict(self._colorsUsed)
+        state['_shadingUsed'] = dict(self._shadingUsed)
+        
+        self._saved_page_states.append(state)
         self._startPage()
 
     def save(self):

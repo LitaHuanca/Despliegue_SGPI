@@ -2,7 +2,7 @@
 
 /**
  * @file page.tsx
- * @route /SGPI-CFPI
+ * @route /proyectos
  * @description Bandeja principal de Gestión de Proyectos de Investigación (SGPI-CFPI).
  */
 
@@ -302,7 +302,7 @@ export default function ProyectosBandejaPage() {
             </p>
           </div>
           <button
-            onClick={() => router.push('/SGPI-CFPI/nuevo')}
+            onClick={() => router.push('/proyectos/nuevo')}
             className="flex items-center gap-1.5 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer whitespace-nowrap flex-shrink-0"
           >
             <PlusIcon />
@@ -504,7 +504,7 @@ export default function ProyectosBandejaPage() {
                             </button>
                           ) : isPendiente ? (
                             <button
-                              onClick={() => router.push(`/SGPI-CFPI/${proy.code}/validar`)}
+                              onClick={() => router.push(`/proyectos/${proy.code}/validar`)}
                               className="inline-flex items-center gap-1 border border-[#001631] text-[#001631] hover:bg-[#001631] hover:text-white font-sans font-bold text-[12px] px-3 py-1 rounded transition-colors cursor-pointer"
                             >
                               <DocumentIcon />
@@ -512,7 +512,7 @@ export default function ProyectosBandejaPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => router.push(`/SGPI-CFPI/${proy.code}`)}
+                              onClick={() => router.push(`/proyectos/${proy.code}`)}
                               className="inline-flex items-center justify-center text-[#475569] hover:text-[#001631] p-1.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
                               title="Ver Expediente Digital"
                               aria-label="Ver Expediente"

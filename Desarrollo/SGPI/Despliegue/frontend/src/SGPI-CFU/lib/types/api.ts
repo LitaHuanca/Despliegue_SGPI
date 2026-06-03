@@ -95,6 +95,14 @@ export interface SearchParams extends PaginationParams {
   q:      string;
   /** Tipo de entidad a buscar */
   type?:  SearchType;
+  /** Fuentes de datos a filtrar */
+  source?: string[];
+  /** Estados a filtrar */
+  status?: string[];
+  /** Año inicial del rango */
+  anio_inicio?: number;
+  /** Año final del rango */
+  anio_fin?: number;
 }
 
 /**
@@ -103,6 +111,7 @@ export interface SearchParams extends PaginationParams {
 export type SearchType =
   | 'investigators'
   | 'projects'
+  | 'groups'
   | 'publications'
   | 'tesis';
 

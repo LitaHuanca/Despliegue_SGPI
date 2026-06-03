@@ -12,6 +12,7 @@ class SearchRequest(BaseModel):
     limit: int = Field(default=10, ge=1, le=100, description="Records per page (1 to 100)")
     sort_by: str = Field(default="relevance", description="Sort field (relevance, date, title)")
     sort_order: str = Field(default="desc", description="Sort order (asc, desc)")
+    live_renacyt: bool = Field(default=False, description="Force live query through RENACYT connector")
 
 class UnifiedSearchItem(BaseModel):
     id: str = Field(..., description="Unique identifier of the entity")
@@ -28,3 +29,5 @@ class SearchResponse(BaseModel):
     limit: int = Field(..., description="Items per page limit")
     total_pages: int = Field(..., description="Total pages of results")
     results: List[UnifiedSearchItem] = Field(..., description="List of paginated results")
+    category_counts: Optional[Dict[str, int]] = Field(default=None, description="Counts of matching records per category")
+

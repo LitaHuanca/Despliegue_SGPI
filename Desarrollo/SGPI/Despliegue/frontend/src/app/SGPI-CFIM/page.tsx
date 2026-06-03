@@ -9,7 +9,7 @@
  *  1. Usuario selecciona entidad + archivo (.xlsx/.csv)
  *  2. Click "Validar" → POST /api/v1/import/excel → job_id
  *  3. Se guarda {entity, fileName, fileSize, jobId} en sessionStorage
- *  4. Navega a /SGPI-CFIM/preview para seguimiento del progreso
+ *  4. Navega a /importacion/preview para seguimiento del progreso
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -187,7 +187,7 @@ export default function ImportacionDeDatosPage() {
       }));
 
       // Ir a la pantalla de progreso / preview
-      router.push('/SGPI-CFIM/preview');
+      router.push('/importacion/preview');
 
     } catch (err: unknown) {
       const msg = err instanceof Error

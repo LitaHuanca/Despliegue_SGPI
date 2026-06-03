@@ -2,7 +2,7 @@
 
 /**
  * @file page.tsx
- * @route /SGPI-CFSA/Gestión_de_Cuentas_Activas
+ * @route /configuracion/Gestión_de_Cuentas_Activas
  * @description Pantalla "Gestión de Cuentas Activas" del módulo Configuración del Sistema.
  *
  * Muestra:
@@ -425,6 +425,7 @@ export default function GestionDeCuentasActivasPage() {
         name: u.correo_institucional.split('@')[0], // Placeholder para el nombre
         role: ROLE_MAP[u.rol_sistema] || 'readonly',
         isActive: u.estado_cuenta,
+        lastLogin: '',
         createdAt: u.created_at
       }));
       setUsers(mappedUsers);

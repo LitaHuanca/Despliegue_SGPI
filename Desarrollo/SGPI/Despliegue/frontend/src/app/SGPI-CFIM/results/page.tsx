@@ -2,7 +2,7 @@
 
 /**
  * @file SGPI-CFIM/results/page.tsx
- * @route /SGPI-CFIM/results
+ * @route /importacion/results
  * @description Pantalla de resumen de importación completada.
  *
  * Lee {entity, fileName, nuevos, actualizados, errores} del sessionStorage
@@ -145,7 +145,7 @@ export default function ImportResultsPage() {
   const handleGoHome = () => {
     sessionStorage.removeItem('import_results');
     sessionStorage.removeItem('import_meta');
-    router.push('/SGPI-CFIM');
+    router.push('/importacion');
   };
 
   return (

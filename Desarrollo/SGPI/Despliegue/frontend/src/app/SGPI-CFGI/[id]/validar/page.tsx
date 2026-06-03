@@ -2,7 +2,7 @@
 
 /**
  * @file [id]/validar/page.tsx
- * @route /SGPI-CFGI/[id]/validar
+ * @route /grupos/[id]/validar
  * @description Curación de Datos — Tabs: Datos Maestros / Gestión de Miembros
  */
 
@@ -228,7 +228,7 @@ export default function CuracionGrupoPage() {
     try {
       await validarGrupo(id, { name, researchLines: [selectedLine], status, recognitionDate: recognitionDate || undefined, miembros });
       setShowToast(true);
-      setTimeout(() => { router.push(`/SGPI-CFGI/${id}/ficha`); }, 2000);
+      setTimeout(() => { router.push(`/grupos/${id}/ficha`); }, 2000);
     } catch (err: any) {
       setErrors([err.message || 'Error al guardar.']);
       setGuardando(false);
@@ -251,7 +251,7 @@ export default function CuracionGrupoPage() {
       <MainLayout title="Curación de Datos" subtitle="">
         <div className="bg-red-50 text-red-800 p-6 rounded border border-red-200">
           <p className="font-sans font-bold">Grupo no encontrado.</p>
-          <button onClick={() => router.push('/SGPI-CFGI')} className="mt-3 text-[13px] font-bold text-red-700 underline cursor-pointer">
+          <button onClick={() => router.push('/grupos')} className="mt-3 text-[13px] font-bold text-red-700 underline cursor-pointer">
             Volver a la bandeja
           </button>
         </div>
@@ -272,7 +272,7 @@ export default function CuracionGrupoPage() {
           <div>
             {/* Back link */}
             <button
-              onClick={() => router.push('/SGPI-CFGI')}
+              onClick={() => router.push('/grupos')}
               className="inline-flex items-center gap-1 text-[13px] font-sans text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer mb-2"
             >
               <BackIcon />
@@ -297,7 +297,7 @@ export default function CuracionGrupoPage() {
           <div className="flex gap-2 flex-shrink-0 ml-4">
             <button
               type="button"
-              onClick={() => router.push('/SGPI-CFGI')}
+              onClick={() => router.push('/grupos')}
               className="border border-[#e2e8f0] hover:bg-slate-50 font-sans text-[13px] text-[#475569] px-4 py-2 rounded transition-colors cursor-pointer"
             >
               Cancelar
@@ -444,7 +444,7 @@ export default function CuracionGrupoPage() {
               {/* Buscador en padrón */}
               <div>
                 <p className="font-sans font-bold text-[10px] text-on-surface uppercase tracking-widest mb-1.5">
-                  Buscar en Padrón de Investigadores (CUO4)
+                  Buscar en Padrón de Investigadores
                 </p>
                 <div className="flex gap-2 items-center">
                   <div className="flex-1 relative max-w-xl">

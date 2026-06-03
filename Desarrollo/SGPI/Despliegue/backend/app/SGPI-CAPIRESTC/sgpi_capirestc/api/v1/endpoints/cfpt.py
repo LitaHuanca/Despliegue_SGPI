@@ -12,7 +12,9 @@ from sgpi_capirestc.schemas.cfpt_schemas import (
     RegistroProduccionResponse, 
     ConfirmarPayload, 
     ValidarDoiResponse,
-    GrupoInvestigacionResumen
+    GrupoInvestigacionResumen,
+    InvestigadorResumen,
+    InvestigadorVinculado
 )
 
 router = APIRouter()
@@ -84,7 +86,9 @@ async def list_producciones(
 
     # 2. Fetch Tesis
     if tipo in ['todos', 'tesis']:
-        stmt_tes = select(Tesis)
+        stmt_tes = select(Tesis, Investigador).outerjoin(
+            Investigador, Tesis.dni_asesor == Investigador.dni
+        )
         filters_tes = []
         if estado != 'todos':
             filters_tes.append(Tesis.estado_validacion.ilike(estado))
@@ -100,7 +104,20 @@ async def list_producciones(
             stmt_tes = stmt_tes.where(and_(*filters_tes))
             
         res_tes = await db.execute(stmt_tes)
-        for t in res_tes.scalars().all():
+        for t, inv in res_tes.all():
+            investigadores_vinculados = []
+            if inv:
+                investigadores_vinculados.append(
+                    InvestigadorVinculado(
+                        investigador=InvestigadorResumen(
+                            id=inv.dni,
+                            nombre=f"{inv.nombres} {inv.apellidos}",
+                            dni=inv.dni,
+                            departamento=inv.departamento_academico
+                        ),
+                        rol="Asesor"
+                    )
+                )
             resultados.append(RegistroProduccionResponse(
                 id=encode_tesis_id(t.url_cybertesis),
                 tipo="tesis",
@@ -111,7 +128,8 @@ async def list_producciones(
                 estado=t.estado_validacion.lower() if t.estado_validacion else "pendiente",
                 tipoTesis=t.tipo_trabajo,
                 urlCybertesis=t.url_cybertesis,
-                tesista=t.autor_estudiante_texto
+                tesista=t.autor_estudiante_texto,
+                investigadoresVinculados=investigadores_vinculados
             ))
 
     return resultados
@@ -153,9 +171,27 @@ async def get_produccion(id: str, db: AsyncSession = Depends(get_db), current_us
         )
     elif id.startswith("tes-"):
         url = decode_tesis_id(id)
-        t = await db.get(Tesis, url)
-        if not t:
+        stmt = select(Tesis, Investigador).outerjoin(
+            Investigador, Tesis.dni_asesor == Investigador.dni
+        ).where(Tesis.url_cybertesis == url)
+        res = await db.execute(stmt)
+        row = res.first()
+        if not row:
             raise HTTPException(status_code=404, detail="Tesis no encontrada")
+        t, inv = row
+        investigadores_vinculados = []
+        if inv:
+            investigadores_vinculados.append(
+                InvestigadorVinculado(
+                    investigador=InvestigadorResumen(
+                        id=inv.dni,
+                        nombre=f"{inv.nombres} {inv.apellidos}",
+                        dni=inv.dni,
+                        departamento=inv.departamento_academico
+                    ),
+                    rol="Asesor"
+                )
+            )
         return RegistroProduccionResponse(
             id=id,
             tipo="tesis",
@@ -166,7 +202,8 @@ async def get_produccion(id: str, db: AsyncSession = Depends(get_db), current_us
             estado=t.estado_validacion.lower() if t.estado_validacion else "pendiente",
             tipoTesis=t.tipo_trabajo,
             urlCybertesis=t.url_cybertesis,
-            tesista=t.autor_estudiante_texto
+            tesista=t.autor_estudiante_texto,
+            investigadoresVinculados=investigadores_vinculados
         )
     raise HTTPException(status_code=400, detail="Formato de ID inválido")
 

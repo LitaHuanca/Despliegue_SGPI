@@ -2,12 +2,12 @@
 
 /**
  * @file [id]/historial/page.tsx
- * @route /SGPI-CFMH/[id]/historial
+ * @route /investigadores/[id]/historial
  * @description Historial por Docente — Línea de Tiempo de Proyectos.
  *
  * Accesible desde:
  *   - Botón "Ver Historial" en la tarjeta de perfil del investigador
- *     (/SGPI-CFMH/[id])
+ *     (/investigadores/[id])
  *
  * Flujo:
  *   6. Recupera y despliega la información del investigador y su Línea de Tiempo.
@@ -469,7 +469,7 @@ export default function HistorialDocentePage() {
             Docente no encontrado.
           </p>
           <button
-            onClick={() => router.push('/SGPI-CFMH')}
+            onClick={() => router.push('/investigadores')}
             className="font-sans text-[13px] text-[#2563eb] hover:underline"
           >
             Volver al directorio
@@ -501,7 +501,7 @@ export default function HistorialDocentePage() {
         <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
           <div>
             <button
-              onClick={() => router.push(`/SGPI-CFMH/${id}`)}
+              onClick={() => router.push(`/investigadores/${id}`)}
               className="
                 inline-flex items-center gap-1 mb-2
                 font-sans text-[12px] text-on-surface-variant hover:text-on-surface

@@ -34,6 +34,7 @@ import type {
 import type { InvestigatorPadron } from '../../SGPI-CFGI/_data/types';
 import { supabase } from '../../../SGPI-CFU/lib/supabase';
 import { apiClient } from '../../../SGPI-CFU/lib/api/client';
+import { formatEmail } from '@/SGPI-CFU/lib/utils/formatters';
  
 const PAGE_SIZE = 10;
  
@@ -198,7 +199,7 @@ export async function buscarInvestigadores(buscar: string): Promise<Investigator
   return items.map((d: any) => ({
     dni: d.dni,
     nombre: `${d.nombres} ${d.apellidos}`,
-    email: `${d.dni}@unmsm.edu.pe`,
+    email: formatEmail(d.correo),
     facultad: d.facultad_dependencia || '',
     departamento: d.departamento_academico || '',
   }));

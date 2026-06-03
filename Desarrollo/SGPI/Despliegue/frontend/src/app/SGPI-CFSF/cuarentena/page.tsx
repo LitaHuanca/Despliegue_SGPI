@@ -70,7 +70,7 @@ export default function CuarentenaPage() {
           <Button
             variant="secondary"
             size="lg"
-            onClick={() => router.push('/SGPI-CFSF')}
+            onClick={() => router.push('/sincronizacion')}
           >
             ← Volver a Sincronización
           </Button>

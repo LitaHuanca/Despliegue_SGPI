@@ -11,6 +11,17 @@ class GrupoInvestigacionResumen(BaseModel):
     siglas: Optional[str] = None
     facultad: Optional[str] = None
 
+class InvestigadorResumen(BaseModel):
+    id: str
+    nombre: str
+    dni: str
+    departamento: str
+    grupo: Optional[str] = None
+
+class InvestigadorVinculado(BaseModel):
+    investigador: InvestigadorResumen
+    rol: str
+
 class RegistroProduccionResponse(BaseModel):
     id: str
     tipo: str  # 'articulo' | 'tesis'
@@ -20,6 +31,7 @@ class RegistroProduccionResponse(BaseModel):
     fuente: str
     estado: str
     grupoVinculado: Optional[GrupoInvestigacionResumen] = None
+    investigadoresVinculados: List[InvestigadorVinculado] = []
     
     # Especifico de articulo
     doi: Optional[str] = None

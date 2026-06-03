@@ -13,7 +13,8 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-// import { useAuth } from '@/lib/hooks/useAuth';
+import { useAuth } from '../../lib/hooks/useAuth';
+import { SessionTimer } from './SessionTimer';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Íconos
@@ -104,11 +105,7 @@ export interface TopBarProps {
 
 export function TopBar({ title, subtitle }: TopBarProps) {
   const pathname = usePathname();
-  // const { user, showExpiryWarning, minutesRemaining, dismissWarning } = useAuth();
-  const user = { name: "Ana Mendoza", role: "Admin Vicedecanato" };
-  const showExpiryWarning = false;
-  const minutesRemaining = 0;
-  const dismissWarning = () => {};
+  const { user, showExpiryWarning, minutesRemaining, dismissWarning } = useAuth();
   const breadcrumbs = parseBreadcrumbs(pathname);
   const currentLabel = title ?? breadcrumbs[breadcrumbs.length - 1]?.label ?? 'SGPI';
 
@@ -142,20 +139,15 @@ export function TopBar({ title, subtitle }: TopBarProps) {
         ">
           <ClockIcon />
           <span>
-            Sesión expira en <strong>{minutesRemaining} min</strong>
+            Su sesión expira pronto (<strong>{minutesRemaining} min</strong>). Por favor, interactúe con el sistema para mantenerla activa.
           </span>
-          <button
-            onClick={dismissWarning}
-            className="ml-2 text-[11px] font-semibold underline hover:no-underline"
-            type="button"
-          >
-            Extender
-          </button>
         </div>
       )}
 
       {/* ── Derecha: Perfil de usuario ───────────────────────────────────── */}
       <div className="flex items-center gap-4 flex-shrink-0">
+        {user && <SessionTimer />}
+
         {/* Notificaciones */}
         <button
           type="button"

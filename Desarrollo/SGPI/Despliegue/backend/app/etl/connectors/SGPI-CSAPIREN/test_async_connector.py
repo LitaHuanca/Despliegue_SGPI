@@ -7,8 +7,15 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
+import pytest
+
+@pytest.fixture
+def anyio_backend():
+    return 'asyncio'
+
 from renacyt_connector.api import RenacytConnector
 
+@pytest.mark.anyio
 async def test_async_queries():
     print("Iniciando pruebas del conector RENACYT asíncrono...")
     connector = RenacytConnector(verify_ssl=False)

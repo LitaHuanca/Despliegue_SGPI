@@ -4,7 +4,9 @@ import uuid
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -103,6 +105,28 @@ app = FastAPI(
 
 # Registrar middleware de logs y correlación al principio de la pila
 app.add_middleware(CorrelationIdMiddleware)
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    logger.error(f"Database integrity error: {exc}", exc_info=True)
+    exc_str = str(exc).lower()
+    if "resolucion_aprobacion" in exc_str or "proyecto_resolucion_aprobacion_key" in exc_str:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "detail": "Ya existe un proyecto registrado con este número de resolución.",
+                "code": "DUPLICATE_RESOLUTION"
+            }
+        )
+    return JSONResponse(
+        status_code=400,
+        content={
+            "success": False,
+            "detail": "Error de integridad de datos en el servidor.",
+            "code": "INTEGRITY_ERROR"
+        }
+    )
 
 # ---------------------------------------------------------------------------
 # Middleware CORS
