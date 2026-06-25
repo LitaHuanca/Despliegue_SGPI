@@ -501,7 +501,6 @@ function BusquedaGlobalPageContent() {
     statuses,
     yearStart,
     yearEnd,
-    liveRenacyt,
     setQuery,
     setType,
     setTypes,
@@ -511,7 +510,6 @@ function BusquedaGlobalPageContent() {
     setYearEnd,
     goToPage,
     clearSearch,
-    triggerLiveRenacyt,
   } = useSearch();
 
   const [inputValue, setInputValue] = useState(query);
@@ -777,40 +775,17 @@ function BusquedaGlobalPageContent() {
               <p className="font-sans font-semibold text-[15px] text-gray-900 mb-1">
                 No se encontraron resultados
               </p>
-              {types.length === 1 && types[0] === 'investigators' && !liveRenacyt ? (
-                <>
-                  <p className="font-sans text-[13px] text-gray-500 mb-4">
-                    No se encontraron investigadores en la base de datos local.
-                  </p>
-                  <button
-                    onClick={triggerLiveRenacyt}
-                    className="px-4 py-2 bg-[#001631] text-white rounded font-sans font-medium text-[13px] hover:bg-[#002855] transition-colors shadow-sm"
-                  >
-                    Buscar en RENACYT
-                  </button>
-                </>
-              ) : (types.length === 0 || types.includes('investigators')) && !liveRenacyt ? (
-                <>
-                  <p className="font-sans text-[13px] text-gray-500 mb-4">
-                    No se encontraron coincidencias en la base de datos local.
-                  </p>
-                  <div className="mt-2 p-3 bg-gray-50 border border-gray-100 rounded-md max-w-md mx-auto">
-                    <p className="font-sans text-[12px] text-gray-600 mb-2.5">
-                      ¿Estaba buscando un docente o investigador? Puede intentar buscar en la base de datos externa de RENACYT.
-                    </p>
-                    <button
-                      onClick={triggerLiveRenacyt}
-                      className="px-3 py-1.5 bg-[#001631] text-white rounded font-sans font-medium text-[11px] hover:bg-[#002855] transition-colors shadow-sm"
-                    >
-                      Buscar Investigador en RENACYT
-                    </button>
-                  </div>
-                </>
+              {types.length === 1 && types[0] === 'investigators' ? (
+                <p className="font-sans text-[13px] text-gray-500">
+                  No se encontraron investigadores en la base de datos local.
+                </p>
+              ) : (types.length === 0 || types.includes('investigators')) ? (
+                <p className="font-sans text-[13px] text-gray-500">
+                  No se encontraron coincidencias. Pruebe con otras palabras clave o amplíe los filtros.
+                </p>
               ) : (
                 <p className="font-sans text-[13px] text-gray-500">
-                  {liveRenacyt
-                    ? 'No se encontraron registros del investigador en RENACYT.'
-                    : 'Pruebe con otras palabras clave o amplíe los filtros.'}
+                  Pruebe con otras palabras clave o amplíe los filtros.
                 </p>
               )}
             </div>
