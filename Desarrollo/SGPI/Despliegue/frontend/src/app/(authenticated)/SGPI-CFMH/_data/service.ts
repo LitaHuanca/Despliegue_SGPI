@@ -30,8 +30,8 @@ import type {
 } from './types';
 
 
-import { supabase } from '../../../SGPI-CFU/lib/supabase';
-import { apiClient } from '../../../SGPI-CFU/lib/api/client';
+import { supabase } from '../../../../SGPI-CFU/lib/supabase';
+import { apiClient } from '../../../../SGPI-CFU/lib/api/client';
  
 const PAGE_SIZE = 10;
  
