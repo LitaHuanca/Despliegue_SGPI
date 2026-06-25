@@ -2,13 +2,13 @@
 
 /**
  * @file page.tsx
- * @route /investigadores  (alias: /investigators)
+ * @route /SGPI-CFMH  (alias: /investigators)
  * @description Directorio de Docentes/Investigadores — Pantalla 1 del flujo.
  *
  * Muestra el listado paginado con filtros, KPIs y accesos a:
- *   - Registrar Nuevo Docente → /investigadores/nuevo
- *   - Editar perfil            → /investigadores/[id]/editar
- *   - Ver perfil               → /investigadores/[id]  (siguiente pantalla)
+ *   - Registrar Nuevo Docente → /SGPI-CFMH/nuevo
+ *   - Editar perfil            → /SGPI-CFMH/[id]/editar
+ *   - Ver perfil               → /SGPI-CFMH/[id]  (siguiente pantalla)
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -18,20 +18,20 @@ import type { DocenteInvestigador, FiltrosDocentes, EstadoVigencia } from './_da
 import { getDocentes, getStats, type PaginatedDocentes } from './_data/service';
 import type { StatsDocentes } from './_data/types';
 import { DEPARTAMENTOS, NIVELES_RENACYT } from './_data/mock';
-import { useAuth } from '@/SGPI-CFU/lib/hooks';
+import { useAuth } from '@/SGPI-CFU/lib/hooks/useAuth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuración visual
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NIVEL_CONFIG: Record<string, { bg: string; text: string }> = {
-  'NIVEL I':     { bg: 'bg-[#f1f5f9]',  text: 'text-[#475569]' },
-  'NIVEL II':    { bg: 'bg-[#dbeafe]',  text: 'text-[#1e40af]' },
-  'NIVEL III':   { bg: 'bg-[#ede9fe]',  text: 'text-[#6d28d9]' },
-  'NIVEL IV':    { bg: 'bg-[#fce7f3]',  text: 'text-[#9d174d]' },
-  'NIVEL V':     { bg: 'bg-[#d1fae5]',  text: 'text-[#065f46]' },
-  'NIVEL VI':    { bg: 'bg-[#fef9c3]',  text: 'text-[#854d0e]' },
-  'NIVEL VII':   { bg: 'bg-[#fee2e2]',  text: 'text-[#991b1b]' },
+  'I':           { bg: 'bg-[#f1f5f9]',  text: 'text-[#475569]' },
+  'II':          { bg: 'bg-[#dbeafe]',  text: 'text-[#1e40af]' },
+  'III':         { bg: 'bg-[#ede9fe]',  text: 'text-[#6d28d9]' },
+  'IV':          { bg: 'bg-[#fce7f3]',  text: 'text-[#9d174d]' },
+  'V':           { bg: 'bg-[#d1fae5]',  text: 'text-[#065f46]' },
+  'VI':          { bg: 'bg-[#fef9c3]',  text: 'text-[#854d0e]' },
+  'VII':         { bg: 'bg-[#fee2e2]',  text: 'text-[#991b1b]' },
   'DISTINGUIDO': { bg: 'bg-[#0f172a]',  text: 'text-white' },
   'Sin nivel':   { bg: 'bg-[#f8fafc]',  text: 'text-[#94a3b8]' },
 };
@@ -121,13 +121,14 @@ const GraduateIcon = () => (
 
 function NivelBadge({ nivel }: { nivel: string }) {
   const cfg = NIVEL_CONFIG[nivel] ?? NIVEL_CONFIG['Sin nivel'];
+  const label = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'].includes(nivel) ? `Nivel ${nivel}` : nivel;
   return (
     <span className={`
       inline-flex items-center px-2.5 py-1 rounded
       font-sans font-bold text-[10px] uppercase tracking-wider whitespace-nowrap
       ${cfg.bg} ${cfg.text}
     `}>
-      {nivel}
+      {label}
     </span>
   );
 }
@@ -243,6 +244,7 @@ function Pagination({ page, pages, onChange }: {
 export default function DocentesDirectorioPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const [filtros,     setFiltros]     = useState<FiltrosDocentes>(DEFAULT_FILTROS);
   const [tempBuscar,  setTempBuscar]  = useState('');
@@ -253,13 +255,12 @@ export default function DocentesDirectorioPage() {
   const [stats,       setStats]       = useState<StatsDocentes | null>(null);
   const [isLoading,   setIsLoading]   = useState(true);
   const [page,        setPage]        = useState(1);
-  const [liveRenacyt, setLiveRenacyt] = useState(false);
 
   // ── Cargar datos ───────────────────────────────────────────────────────────
-  const cargar = useCallback(async (f: FiltrosDocentes, p: number, liveRenacytParam: boolean = false) => {
+  const cargar = useCallback(async (f: FiltrosDocentes, p: number) => {
     setIsLoading(true);
     try {
-      const [res, statsRes] = await Promise.all([getDocentes(f, p, liveRenacytParam), getStats()]);
+      const [res, statsRes] = await Promise.all([getDocentes(f, p), getStats()]);
       setResultado(res);
       setStats(statsRes);
     } finally {
@@ -267,31 +268,25 @@ export default function DocentesDirectorioPage() {
     }
   }, []);
 
-  useEffect(() => { cargar(DEFAULT_FILTROS, 1, false); }, [cargar]);
+  useEffect(() => { cargar(DEFAULT_FILTROS, 1); }, [cargar]);
 
   // ── Filtrar ────────────────────────────────────────────────────────────────
   const handleFiltrar = () => {
-    setLiveRenacyt(false);
     const f: FiltrosDocentes = {
       buscar: tempBuscar, departamento: tempDepto,
       nivelRenacyt: tempNivel, estado: tempEstado,
     };
     setFiltros(f);
     setPage(1);
-    cargar(f, 1, false);
+    cargar(f, 1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter') handleFiltrar(); };
 
   const handlePage = (p: number) => {
     setPage(p);
-    cargar(filtros, p, liveRenacyt);
+    cargar(filtros, p);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const triggerLiveRenacyt = () => {
-    setLiveRenacyt(true);
-    cargar(filtros, 1, true);
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -311,9 +306,9 @@ export default function DocentesDirectorioPage() {
             Gestione la información y el estado de vigencia de los docentes investigadores.
           </p>
         </div>
-        {user?.role === 'admin' && (
+        {isAdmin && (
           <button
-            onClick={() => router.push('/investigadores/nuevo')}
+            onClick={() => router.push('/SGPI-CFMH/nuevo')}
             className="flex items-center gap-2 px-4 py-2 rounded font-sans font-semibold text-[13px] text-white bg-[#001631] hover:bg-[#002b54] transition-colors flex-shrink-0"
             aria-label="Registrar nuevo docente investigador"
           >
@@ -370,7 +365,10 @@ export default function DocentesDirectorioPage() {
             <Select id="filtro-nivel" label="Nivel Renacyt" value={tempNivel} onChange={setTempNivel}
               options={[
                 { value: '', label: 'Todos' },
-                ...NIVELES_RENACYT.map((n) => ({ value: n, label: n })),
+                ...NIVELES_RENACYT.map((n) => ({
+                  value: n,
+                  label: ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'].includes(n) ? `Nivel ${n}` : n
+                })),
               ]}
             />
           </div>
@@ -430,11 +428,10 @@ export default function DocentesDirectorioPage() {
                 </thead>
                 <tbody className="divide-y divide-outline-variant">
                   {resultado.items.map((doc) => (
-                    <DocenteRow key={doc.id} doc={doc}
-                      isAdmin={user?.role === 'admin'}
-                      onEdit={() => router.push(`/investigadores/${doc.id}/editar`)}
-                      onView={() => router.push(`/investigadores/${doc.id}`)}
-                      onImport={() => router.push(`/investigadores/nuevo?dni=${doc.dni}&nombres=${encodeURIComponent(doc.nombres)}&apellidos=${encodeURIComponent(doc.apellidos)}&nivelRenacyt=${encodeURIComponent(doc.nivelRenacyt)}`)}
+                    <DocenteRow key={doc.id} doc={doc} isAdmin={isAdmin}
+                      onEdit={() => router.push(`/SGPI-CFMH/${doc.id}/editar`)}
+                      onView={() => router.push(`/SGPI-CFMH/${doc.id}`)}
+                      onImport={() => router.push(`/SGPI-CFMH/nuevo?dni=${doc.dni}&nombres=${encodeURIComponent(doc.nombres)}&apellidos=${encodeURIComponent(doc.apellidos)}&nivelRenacyt=${encodeURIComponent(doc.nivelRenacyt)}`)}
                     />
                   ))}
                 </tbody>
@@ -459,27 +456,9 @@ export default function DocentesDirectorioPage() {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
             <p className="font-sans font-semibold text-[14px] text-on-surface mb-1">
-              No se encontraron docentes con los criterios seleccionados en la base de datos local.
+              No se encontraron docentes con los criterios seleccionados.
             </p>
-            {filtros.buscar.trim() && !liveRenacyt ? (
-              <>
-                <p className="font-sans text-[12px] text-on-surface-variant mb-4">
-                  Puede intentar buscar en la base de datos externa de RENACYT.
-                </p>
-                <button
-                  onClick={triggerLiveRenacyt}
-                  className="px-4 py-2 bg-[#001631] text-white rounded font-sans font-semibold text-[12px] hover:bg-[#002b54] transition-colors shadow-sm"
-                >
-                  Buscar en RENACYT
-                </button>
-              </>
-            ) : (
-              <p className="font-sans text-[12px] text-on-surface-variant">
-                {liveRenacyt
-                  ? 'No se encontraron registros del investigador en RENACYT.'
-                  : 'Ajuste los filtros o intente nuevamente.'}
-              </p>
-            )}
+            <p className="font-sans text-[12px] text-on-surface-variant">Ajuste los filtros e intente nuevamente.</p>
           </div>
         )}
 
@@ -547,7 +526,7 @@ function DocenteRow({ doc, onEdit, onView, onImport, isAdmin }: {
         <p className="font-sans font-bold text-[13px] text-on-surface uppercase leading-[18px]">
           {doc.apellidos}, {doc.nombres}
         </p>
-        {doc.email && <p className="font-sans text-[11px] text-on-surface-variant mt-0.5">{doc.email}</p>}
+        <p className="font-sans text-[11px] text-on-surface-variant mt-0.5">{doc.email}</p>
       </td>
 
       {/* Departamento */}
@@ -579,7 +558,7 @@ function DocenteRow({ doc, onEdit, onView, onImport, isAdmin }: {
           <button onClick={onView}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded font-sans font-semibold text-[12px] text-on-surface border border-outline-variant hover:bg-surface-container hover:border-[#001631] transition-colors whitespace-nowrap"
             aria-label={`Ver y editar perfil de ${doc.apellidos}, ${doc.nombres}`}>
-            <EditIcon /> Ver / Editar
+            {isAdmin ? <><EditIcon /> Ver / Editar</> : <><EyeIcon /> Ver Detalle</>}
           </button>
         )}
       </td>

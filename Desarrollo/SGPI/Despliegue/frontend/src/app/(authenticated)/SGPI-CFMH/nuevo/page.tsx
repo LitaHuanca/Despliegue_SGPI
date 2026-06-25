@@ -2,7 +2,7 @@
 
 /**
  * @file nuevo/page.tsx
- * @route /investigadores/nuevo
+ * @route /SGPI-CFMH/nuevo
  * @description Formulario de registro de nuevo Docente/Investigador.
  *
  * Secciones:
@@ -23,8 +23,7 @@ import { MainLayout } from '@/SGPI-CFU/components/layout';
 import type { NivelRenacyt } from '../_data/types';
 import { crearDocente, validarDNI } from '../_data/service';
 import { DEPARTAMENTOS, NIVELES_RENACYT } from '../_data/mock';
-import { useAuth } from '@/SGPI-CFU/lib/hooks';
-import { validateInstitutionalEmail } from '@/SGPI-CFU/lib/utils/validators';
+import { useAuth } from '@/SGPI-CFU/lib/hooks/useAuth';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Íconos
@@ -252,19 +251,13 @@ function ConfirmModal({
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Niveles mostrados en la grilla (4 visibles en la imagen)
-const NIVELES_GRILLA: NivelRenacyt[] = ['NIVEL VII', 'NIVEL VI', 'NIVEL V', 'NIVEL IV', 'NIVEL III', 'NIVEL II', 'NIVEL I', 'DISTINGUIDO'];
+const NIVELES_GRILLA: NivelRenacyt[] = ['VII', 'VI', 'V', 'IV', 'III', 'II', 'I', 'DISTINGUIDO'];
 
 function NuevoDocentePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isLoading } = useAuth();
-
-  // Redirigir si el usuario no es administrador
-  useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'admin')) {
-      router.replace('/investigadores');
-    }
-  }, [user, isLoading, router]);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const dniParam = searchParams.get('dni') || '';
   const nombresParam = searchParams.get('nombres') || '';
@@ -278,7 +271,7 @@ function NuevoDocentePageContent() {
   const [email,           setEmail]           = useState('');
   const [telefono,        setTelefono]        = useState('');
   const [departamento,    setDepartamento]    = useState('');
-  const [nivelSeleccionado, setNivelSeleccionado] = useState<NivelRenacyt>('NIVEL IV');
+  const [nivelSeleccionado, setNivelSeleccionado] = useState<NivelRenacyt>('IV');
   const [esSM,            setEsSM]            = useState(true);
   const [puntajeInicial,  setPuntajeInicial]  = useState('0.00');
   const [publicaciones,   setPublicaciones]   = useState('0');
@@ -313,18 +306,11 @@ function NuevoDocentePageContent() {
     if (!dni.trim())         errs.push('dni');
     if (!nombres.trim())     errs.push('nombres');
     if (!apellidos.trim())   errs.push('apellidos');
-    
-    const emailErr = validateInstitutionalEmail(email);
-    if (emailErr)            errs.push('email');
-
+    if (!email.trim())       errs.push('email');
     if (!departamento)       errs.push('departamento');
     setFieldErrors(errs);
     if (errs.length > 0) {
-      if (emailErr && email.trim()) {
-        setGlobalError(emailErr);
-      } else {
-        setGlobalError('Debe completar todos los campos obligatorios para guardar el perfil.');
-      }
+      setGlobalError('Debe completar todos los campos obligatorios para guardar el perfil.');
       return false;
     }
     return true;
@@ -357,7 +343,7 @@ function NuevoDocentePageContent() {
         }],
       });
       setShowModal(false);
-      router.push('/investigadores');
+      router.push('/SGPI-CFMH');
     } catch {
       setGlobalError('Error al registrar el docente. Intente nuevamente.');
       setShowModal(false);
@@ -368,25 +354,23 @@ function NuevoDocentePageContent() {
 
   const hasErr = (f: string) => fieldErrors.includes(f);
 
-  if (isLoading || !user || user.role !== 'admin') {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────────────────
+
+  if (!isAdmin) {
     return (
       <MainLayout title="Sistema de Gestión de Proyectos de Investigación">
-        <div className="flex h-[50vh] items-center justify-center bg-background">
-          <div className="flex flex-col items-center gap-3">
-            <svg className="animate-spin h-8 w-8 text-[#001631]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span className="font-sans text-[14px] text-[#475569]">Verificando credenciales...</span>
-          </div>
+        <div className="text-center py-20">
+          <p className="font-sans font-semibold text-[14px] text-[#dc2626] mb-2">Acceso Denegado. Solo administradores pueden registrar nuevos investigadores.</p>
+          <button onClick={() => router.push('/SGPI-CFMH')}
+            className="font-sans text-[13px] text-[#001631] hover:underline font-bold">
+            Volver al directorio
+          </button>
         </div>
       </MainLayout>
     );
   }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <MainLayout title="Sistema de Gestión de Proyectos de Investigación">
@@ -404,20 +388,18 @@ function NuevoDocentePageContent() {
           </p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <button onClick={() => router.push('/investigadores')}
+          <button onClick={() => router.push('/SGPI-CFMH')}
             className="border border-[#e2e8f0] hover:bg-slate-50 font-sans text-[13px] text-[#475569] px-4 py-2 rounded transition-colors cursor-pointer"
             type="button"
             aria-label="Cancelar registro">
             Cancelar
           </button>
-          {user?.role === 'admin' && (
-            <button onClick={handleRegistrar}
-              className="flex items-center gap-2 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer"
-              type="button"
-              aria-label="Registrar nuevo docente">
-              <GraduateIcon /> Registrar Docente
-            </button>
-          )}
+          <button onClick={handleRegistrar}
+            className="flex items-center gap-2 bg-[#001631] hover:bg-[#002b54] text-white font-sans font-bold text-[13px] px-4 py-2 rounded shadow transition-colors cursor-pointer"
+            type="button"
+            aria-label="Registrar nuevo docente">
+            <GraduateIcon /> Registrar Docente
+          </button>
         </div>
       </div>
 
@@ -541,7 +523,7 @@ function NuevoDocentePageContent() {
                           </svg>
                         )}
                       </span>
-                      {n}
+                      {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'].includes(n) ? `Nivel ${n}` : n}
                     </button>
                   );
                 })}

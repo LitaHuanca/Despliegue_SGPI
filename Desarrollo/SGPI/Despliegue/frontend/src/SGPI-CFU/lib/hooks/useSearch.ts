@@ -94,7 +94,6 @@ export function useSearch() {
   const [statuses,   setStatusesState] = useState<string[]>([]);
   const [yearStart,  setYearStartState] = useState<number | undefined>(undefined);
   const [yearEnd,    setYearEndState]   = useState<number | undefined>(undefined);
-  const [liveRenacyt, setLiveRenacyt]   = useState<boolean>(false);
 
   const [pagination, setPagination] = useState<SearchPagination>({
     page:    1,
@@ -109,8 +108,6 @@ export function useSearch() {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Ref para el AbortController de la petición en curso
   const abortControllerRef = useRef<AbortController | null>(null);
-  // Ref para saltar el debounce en búsquedas explícitas (enter/submit)
-  const skipNextDebounceRef = useRef<boolean>(false);
 
   // ──────────────────────────────────────────────────────────────────────────
   // Función de búsqueda
@@ -123,8 +120,7 @@ export function useSearch() {
     searchSources: string[],
     searchStatuses: string[],
     searchYearStart: number | undefined,
-    searchYearEnd: number | undefined,
-    searchLiveRenacyt: boolean
+    searchYearEnd: number | undefined
   ) => {
     // Validar longitud mínima
     if (searchQuery.trim().length < MIN_QUERY_LENGTH) {
@@ -171,14 +167,10 @@ export function useSearch() {
     if (searchYearEnd !== undefined) {
       params.append('anio_fin', String(searchYearEnd));
     }
-    if (searchLiveRenacyt) {
-      params.append('live_renacyt', 'true');
-    }
 
     try {
       const data = await apiClient.get<PaginatedData<SearchResult> & { counts?: Record<string, number> }>(
-        `/search?${params.toString()}`,
-        { timeout: 30000 }
+        `/search?${params.toString()}`
       );
 
       setResults(data.items);
@@ -230,22 +222,13 @@ export function useSearch() {
         page: 1, total: 0, pages: 1, limit: DEFAULT_LIMIT,
         hasNext: false, hasPrev: false,
       });
-      setLiveRenacyt(false);
       return;
     }
 
-    // Si se solicitó saltar el debounce (búsqueda explícita)
-    if (skipNextDebounceRef.current) {
-      skipNextDebounceRef.current = false;
-      setLiveRenacyt(false);
-      performSearch(query, types, page, sources, statuses, yearStart, yearEnd, false);
-    } else {
-      // Programar la búsqueda con debounce
-      debounceTimerRef.current = setTimeout(() => {
-        setLiveRenacyt(false);
-        performSearch(query, types, page, sources, statuses, yearStart, yearEnd, false);
-      }, DEBOUNCE_MS);
-    }
+    // Programar la búsqueda con debounce
+    debounceTimerRef.current = setTimeout(() => {
+      performSearch(query, types, page, sources, statuses, yearStart, yearEnd);
+    }, DEBOUNCE_MS);
 
     return () => {
       if (debounceTimerRef.current) {
@@ -262,14 +245,8 @@ export function useSearch() {
    * Actualiza el término de búsqueda y resetea a la página 1.
    */
   const setQuery = useCallback((newQuery: string) => {
-    skipNextDebounceRef.current = true;
     setQueryState(newQuery);
-    setPage(1);
-    if (newQuery.trim().length >= MIN_QUERY_LENGTH) {
-      setResults([]);
-      setIsLoading(true);
-      setError(null);
-    }
+    setPage(1); // Resetear a la primera página al cambiar el query
   }, []);
 
   /**
@@ -278,19 +255,13 @@ export function useSearch() {
   const setTypes = useCallback((newTypes: SearchType[]) => {
     setTypesState(newTypes);
     setPage(1);
-    setResults([]);
-    setIsLoading(true);
-    setError(null);
   }, []);
 
   // Backwards compatibility for single type
   const type = types[0] || undefined;
   const setType = useCallback((newType: SearchType | undefined) => {
     setTypesState(newType ? [newType] : []);
-    setPage(1);
-    setResults([]);
-    setIsLoading(true);
-    setError(null);
+    setPage(1); // Resetear a la primera página al cambiar el filtro
   }, []);
 
   /**
@@ -299,9 +270,6 @@ export function useSearch() {
   const setSources = useCallback((newSources: string[]) => {
     setSourcesState(newSources);
     setPage(1);
-    setResults([]);
-    setIsLoading(true);
-    setError(null);
   }, []);
 
   /**
@@ -310,9 +278,6 @@ export function useSearch() {
   const setStatuses = useCallback((newStatuses: string[]) => {
     setStatusesState(newStatuses);
     setPage(1);
-    setResults([]);
-    setIsLoading(true);
-    setError(null);
   }, []);
 
   /**
@@ -321,9 +286,6 @@ export function useSearch() {
   const setYearStart = useCallback((newYearStart: number | undefined) => {
     setYearStartState(newYearStart);
     setPage(1);
-    setResults([]);
-    setIsLoading(true);
-    setError(null);
   }, []);
 
   /**
@@ -332,9 +294,6 @@ export function useSearch() {
   const setYearEnd = useCallback((newYearEnd: number | undefined) => {
     setYearEndState(newYearEnd);
     setPage(1);
-    setResults([]);
-    setIsLoading(true);
-    setError(null);
   }, []);
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -343,46 +302,20 @@ export function useSearch() {
 
   /** Avanza a la siguiente página de resultados */
   const nextPage = useCallback(() => {
-    if (pagination.hasNext) {
-      setResults([]);
-      setIsLoading(true);
-      setError(null);
-      setPage((p) => p + 1);
-    }
+    if (pagination.hasNext) setPage((p) => p + 1);
   }, [pagination.hasNext]);
 
   /** Retrocede a la página anterior de resultados */
   const prevPage = useCallback(() => {
-    if (pagination.hasPrev) {
-      setResults([]);
-      setIsLoading(true);
-      setError(null);
-      setPage((p) => p - 1);
-    }
+    if (pagination.hasPrev) setPage((p) => p - 1);
   }, [pagination.hasPrev]);
 
   /** Navega a una página específica */
   const goToPage = useCallback((targetPage: number) => {
     if (targetPage >= 1 && targetPage <= pagination.pages) {
-      setResults([]);
-      setIsLoading(true);
-      setError(null);
       setPage(targetPage);
     }
   }, [pagination.pages]);
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Buscar en RENACYT (en vivo)
-  // ──────────────────────────────────────────────────────────────────────────
-
-  /** Activa la búsqueda en vivo y ejecuta performSearch inmediatamente */
-  const triggerLiveRenacyt = useCallback(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    setLiveRenacyt(true);
-    performSearch(query, types, page, sources, statuses, yearStart, yearEnd, true);
-  }, [query, types, page, sources, statuses, yearStart, yearEnd, performSearch]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // Limpiar búsqueda
@@ -399,7 +332,6 @@ export function useSearch() {
     setStatusesState([]);
     setYearStartState(undefined);
     setYearEndState(undefined);
-    setLiveRenacyt(false);
     setPage(1);
     setResults([]);
     setCounts(undefined);
@@ -433,7 +365,6 @@ export function useSearch() {
     pagination,
     isEmpty,
     isBlank,
-    liveRenacyt,
 
     // Filtros
     sources,
@@ -455,6 +386,5 @@ export function useSearch() {
     prevPage,
     goToPage,
     clearSearch,
-    triggerLiveRenacyt,
   };
 }

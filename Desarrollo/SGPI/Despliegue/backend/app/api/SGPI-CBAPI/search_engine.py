@@ -1,7 +1,4 @@
 import asyncio
-import os
-import sys
-import re
 from typing import List, Dict, Any, Optional
 from sqlalchemy import select, or_, and_, extract
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,18 +7,6 @@ from datetime import datetime, date
 from app.models.domain import Investigador, Proyecto, GrupoInvestigacion, Publicacion, Tesis
 from .schemas import SearchRequest, UnifiedSearchItem, SearchResponse
 from app.core.logger import logger
-
-# Import dynamic logic for RENACYT connector
-current_dir = os.path.dirname(os.path.abspath(__file__))
-csapiren_path = os.path.abspath(os.path.join(current_dir, '..', '..', 'etl', 'connectors', 'SGPI-CSAPIREN'))
-if csapiren_path not in sys.path:
-    sys.path.insert(0, csapiren_path)
-
-try:
-    from renacyt_connector.api import RenacytConnector
-except ImportError:
-    RenacytConnector = None
-
 
 class SearchEngine:
     @staticmethod
@@ -117,148 +102,66 @@ class SearchEngine:
         
         # 1. Query Investigadores
         if "Investigador" in categories_to_query:
-            # Check if we should execute live search
-            is_live_renacyt = req.live_renacyt or (req.source and "RENACYT_LIVE" in req.source)
+            # Check source filters (RENACYT or RAIS or Manual)
+            # If source is specified, check if we need to query this table at all
+            stmt = select(Investigador).where(
+                or_(
+                    Investigador.nombres.ilike(q_term),
+                    Investigador.apellidos.ilike(q_term),
+                    Investigador.dni.ilike(q_term),
+                    Investigador.departamento_academico.ilike(q_term),
+                    Investigador.codigo_renacyt.ilike(q_term)
+                )
+            )
             
-            if is_live_renacyt:
-                # Query RENACYT connector
-                live_results = []
-                if RenacytConnector is not None:
-                    try:
-                        logger.info(f"SearchEngine: Iniciando consulta en vivo a RENACYT para query '{req.q}'")
-                        connector = RenacytConnector(verify_ssl=False)
-                        connector.rate_limit_delay = 0.1
-                        
-                        clean_query = req.q.strip()
-                        is_dni = bool(re.match(r'^\d{8}$', clean_query))
-                        
-                        records = []
-                        if is_dni:
-                            r = await connector.search_by_dni(clean_query)
-                            if r:
-                                records = [r]
-                        else:
-                            res = await connector.search_by_fullname(clean_query, page=1, page_size=50)
-                            records = res.get("data", []) if res else []
-                            
-                        for r in records:
-                            doc_id = r.get("numero_documento") or r.get("codigo_registro") or str(r.get("id", ""))
-                            title = f"{r.get('apellido_paterno', '')} {r.get('apellido_materno', '')}, {r.get('nombres', '')}".strip()
-                            title = " ".join(title.split()) # normalize whitespace
-                            
-                            is_sm = False
-                            for inst in [r.get("institucion_laboral_principal"), r.get("institucion_laboral_actual")]:
-                                if inst and any(x in str(inst).upper() for x in ["SAN MARCOS", "UNMSM"]):
-                                    is_sm = True
-                                    break
-                                    
-                            date_str = r.get("fecha_ingreso_renacyt") or r.get("fecha_inicio_vigencia")
-                            
-                            # Filter by status if requested
-                            status_val = r.get("condicion") or "Activo"
-                            if req.status and status_val not in req.status:
-                                continue
-                                
-                            # Filter by years if requested
-                            if date_str:
-                                try:
-                                    year_val = int(date_str.split("-")[0])
-                                    if req.anio_inicio and year_val < req.anio_inicio:
-                                        continue
-                                    if req.anio_fin and year_val > req.anio_fin:
-                                        continue
-                                except (ValueError, IndexError):
-                                    pass
-                                    
-                            live_results.append(UnifiedSearchItem(
-                                id=doc_id,
-                                title=title,
-                                category="Investigador",
-                                source="Conector RENACYT",
-                                status=status_val,
-                                date=date_str,
-                                details={
-                                    "departamento_academico": r.get("institucion_laboral_principal") or "Externo (RENACYT)",
-                                    "categoria_renacyt": r.get("nivel") or r.get("grupo") or "Sin nivel",
-                                    "codigo_renacyt": r.get("codigo_registro"),
-                                    "investigador_sm": is_sm,
-                                    "tiene_deuda_gi": False,
-                                    "tiene_deuda_pi": False,
-                                    "is_external": True
-                                }
-                            ))
-                        logger.info(f"SearchEngine: Consulta RENACYT en vivo retornó {len(live_results)} resultados")
-                    except Exception as e:
-                        logger.error(f"SearchEngine: Error consultando RENACYT en vivo: {e}", exc_info=True)
-                else:
-                    logger.error("SearchEngine: RenacytConnector no está importado o disponible.")
+            # Filter by status
+            if req.status:
+                stmt = stmt.where(Investigador.estado_vigencia.in_(req.status))
                 
-                results.extend(live_results)
-            else:
-                # Normal database query
-                stmt = select(Investigador).where(
-                    or_(
-                        Investigador.nombres.ilike(q_term),
-                        Investigador.apellidos.ilike(q_term),
-                        Investigador.dni.ilike(q_term),
-                        Investigador.departamento_academico.ilike(q_term),
-                        Investigador.codigo_renacyt.ilike(q_term)
-                    )
-                )
+            db_res = await db.execute(stmt)
+            raw_invs = db_res.scalars().all()
+            logger.info(
+                f"SearchEngine: Investigadores BD retornó {len(raw_invs)} "
+                f"registros para query '{req.q}'"
+            )
+            inv_added = 0
+            for inv in raw_invs:
+                src = self._deduce_source_investigador(inv)
+                # Filter by source
+                if req.source and src not in req.source:
+                    continue
                 
-                # Filter by status
-                if req.status:
-                    stmt = stmt.where(Investigador.estado_vigencia.in_(req.status))
-                    
-                db_res = await db.execute(stmt)
-                raw_invs = db_res.scalars().all()
-                logger.info(
-                    f"SearchEngine: Investigadores BD retornó {len(raw_invs)} "
-                    f"registros para query '{req.q}'"
-                )
-                inv_added = 0
-                for inv in raw_invs:
-                    src = self._deduce_source_investigador(inv)
-                    # Filter by source
-                    if req.source and src not in req.source:
-                        continue
+                # Check years (Investigadores don't have explicit years, but we can match created_at year if filter is set)
+                inv_year = inv.created_at.year if inv.created_at else None
+                if req.anio_inicio and (not inv_year or inv_year < req.anio_inicio):
+                    continue
+                if req.anio_fin and (not inv_year or inv_year > req.anio_fin):
+                    continue
 
-                    # Excluir registros externos (temporal de búsqueda RENACYT previa)
-                    # para que sólo aparezcan investigadores formalizados en la BD local.
-                    if inv.is_external:
-                        continue
-                    
-                    # Check years (Investigadores don't have explicit years, but we can match created_at year if filter is set)
-                    inv_year = inv.created_at.year if inv.created_at else None
-                    if req.anio_inicio and (not inv_year or inv_year < req.anio_inicio):
-                        continue
-                    if req.anio_fin and (not inv_year or inv_year > req.anio_fin):
-                        continue
-    
-                    date_str = inv.created_at.strftime("%Y-%m-%d") if inv.created_at else None
-                    
-                    results.append(UnifiedSearchItem(
-                        id=inv.dni,
-                        title=f"{inv.apellidos}, {inv.nombres}",
-                        category="Investigador",
-                        source=src,
-                        status=inv.estado_vigencia,
-                        date=date_str,
-                        details={
-                            "departamento_academico": inv.departamento_academico,
-                            "categoria_renacyt": inv.categoria_renacyt,
-                            "codigo_renacyt": inv.codigo_renacyt,
-                            "investigador_sm": inv.investigador_sm,
-                            "tiene_deuda_gi": inv.tiene_deuda_gi,
-                            "tiene_deuda_pi": inv.tiene_deuda_pi,
-                            "is_external": inv.is_external
-                        }
-                    ))
-                    inv_added += 1
-                logger.info(
-                    f"SearchEngine: Investigadores filtrados - "
-                    f"Agregados: {inv_added}/{len(raw_invs)}"
-                )
+                date_str = inv.created_at.strftime("%Y-%m-%d") if inv.created_at else None
+                
+                results.append(UnifiedSearchItem(
+                    id=inv.dni,
+                    title=f"{inv.apellidos}, {inv.nombres}",
+                    category="Investigador",
+                    source=src,
+                    status=inv.estado_vigencia,
+                    date=date_str,
+                    details={
+                        "departamento_academico": inv.departamento_academico,
+                        "categoria_renacyt": inv.categoria_renacyt,
+                        "codigo_renacyt": inv.codigo_renacyt,
+                        "investigador_sm": inv.investigador_sm,
+                        "tiene_deuda_gi": inv.tiene_deuda_gi,
+                        "tiene_deuda_pi": inv.tiene_deuda_pi,
+                        "is_external": inv.is_external
+                    }
+                ))
+                inv_added += 1
+            logger.info(
+                f"SearchEngine: Investigadores filtrados - "
+                f"Agregados: {inv_added}/{len(raw_invs)}"
+            )
 
         # 2. Query Proyectos
         if "Proyecto" in categories_to_query:

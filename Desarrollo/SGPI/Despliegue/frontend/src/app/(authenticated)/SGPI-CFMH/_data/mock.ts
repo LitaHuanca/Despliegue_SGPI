@@ -18,6 +18,5 @@ export const DEPARTAMENTOS = [
 ];
 
 export const NIVELES_RENACYT = [
-  'NIVEL I', 'NIVEL II', 'NIVEL III', 'NIVEL IV',
-  'NIVEL V', 'NIVEL VI', 'NIVEL VII', 'DISTINGUIDO', 'Sin nivel',
+  'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'DISTINGUIDO', 'Sin nivel',
 ];

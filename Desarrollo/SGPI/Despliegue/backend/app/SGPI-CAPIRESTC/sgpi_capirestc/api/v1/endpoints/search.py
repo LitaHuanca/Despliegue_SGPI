@@ -67,7 +67,6 @@ async def global_search(
     sort_by: str = Query("relevance", description="Sort by relevance, date, title"),
     sortBy: Optional[str] = Query(None, alias="sortBy"),
     sort_order: str = Query("desc", description="Sort order: asc, desc"),
-    live_renacyt: bool = Query(False, description="Force live query through RENACYT connector"),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
@@ -163,8 +162,7 @@ async def global_search(
         page=page_num,
         limit=limit_num,
         sort_by=sort_field,
-        sort_order=sort_order,
-        live_renacyt=live_renacyt
+        sort_order=sort_order
     )
 
     logger.info(

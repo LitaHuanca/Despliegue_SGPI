@@ -21,13 +21,13 @@
 export type EstadoVigencia = 'activo' | 'inactivo' | 'por_vencer';
 
 export type NivelRenacyt =
-  | 'NIVEL I'
-  | 'NIVEL II'
-  | 'NIVEL III'
-  | 'NIVEL IV'
-  | 'NIVEL V'
-  | 'NIVEL VI'
-  | 'NIVEL VII'
+  | 'I'
+  | 'II'
+  | 'III'
+  | 'IV'
+  | 'V'
+  | 'VI'
+  | 'VII'
   | 'DISTINGUIDO'
   | 'Sin nivel';
 

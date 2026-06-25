@@ -133,31 +133,14 @@ def check_role(allowed_roles: list[str]):
     de roles permitidos.
     """
     def role_checker(payload: dict = Depends(get_current_user)):
-        from app.core.logger import logger
-        
-        app_metadata = payload.get("app_metadata", {}) or {}
-        user_metadata = payload.get("user_metadata", {}) or {}
-        
+        app_metadata = payload.get("app_metadata", {})
+        user_metadata = payload.get("user_metadata", {})
         rol = (
             payload.get("rol_sistema")
             or app_metadata.get("rol_sistema")
             or user_metadata.get("rol_sistema")
-            or payload.get("role")
-            or app_metadata.get("role")
-            or user_metadata.get("role")
         )
-        
-        # Admin check bypass - Admin can do EVERYTHING
-        if rol and str(rol).strip().lower() == "administrador":
-            logger.info(f"[SECURITY] User is Administrador. Bypassing role checks for {allowed_roles}.")
-            return payload
-            
-        if not rol or rol not in allowed_roles:
-            logger.warning(
-                f"[SECURITY] Access DENIED. Allowed roles: {allowed_roles}. "
-                f"User ID: {payload.get('sub')}. User Role: {rol}. "
-                f"App Metadata: {app_metadata}. User Metadata: {user_metadata}"
-            )
+        if rol not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=(
@@ -165,8 +148,6 @@ def check_role(allowed_roles: list[str]):
                     f"{allowed_roles}. Tu rol actual es: {rol}"
                 )
             )
-            
-        logger.info(f"[SECURITY] Access granted for role: {rol}. User ID: {payload.get('sub')}.")
         return payload
     return role_checker
 

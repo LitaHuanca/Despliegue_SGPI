@@ -30,21 +30,23 @@ import type {
 } from './types';
 
 
-import { supabase } from '@/SGPI-CFU/lib/supabase';
-import { apiClient } from '@/SGPI-CFU/lib/api/client';
-import { formatEmail } from '@/SGPI-CFU/lib/utils/formatters';
+import { supabase } from '../../../SGPI-CFU/lib/supabase';
+import { apiClient } from '../../../SGPI-CFU/lib/api/client';
  
 const PAGE_SIZE = 10;
  
 function mapToDocente(inv: any): DocenteInvestigador {
+  let cat = inv.categoria_renacyt;
+  if (cat === 'ID') cat = 'DISTINGUIDO';
+  if (!cat || cat === 'No Clasificado') cat = 'Sin nivel';
   return {
     id: inv.dni,
     dni: inv.dni,
     nombres: inv.nombres,
     apellidos: inv.apellidos,
-    email: formatEmail(inv.correo),
+    email: inv.correo || `${inv.dni}@unmsm.edu.pe`,
     departamento: inv.departamento_academico,
-    nivelRenacyt: (inv.categoria_renacyt || 'Sin nivel') as NivelRenacyt,
+    nivelRenacyt: cat as NivelRenacyt,
     condicionSM: inv.investigador_sm ? 'SM' : 'No SM',
     estado: (inv.estado_vigencia?.toLowerCase() || 'activo') as EstadoVigencia,
     fechaVigencia: undefined,
@@ -76,7 +78,6 @@ export interface PaginatedDocentes {
 export async function getDocentes(
   filtros: FiltrosDocentes,
   page: number = 1,
-  liveRenacyt: boolean = false,
 ): Promise<PaginatedDocentes> {
   const params = new URLSearchParams({
     page: String(page),
@@ -95,9 +96,6 @@ export async function getDocentes(
   if (filtros.estado) {
     params.append('estado', filtros.estado);
   }
-  if (liveRenacyt) {
-    params.append('live_renacyt', 'true');
-  }
 
   // Hacer la petición al backend local (FastAPI) a través de apiClient
   const data = await apiClient.get<{
@@ -105,7 +103,7 @@ export async function getDocentes(
     total: number;
     page: number;
     pages: number;
-  }>(`/investigators?${params.toString()}`, { timeout: 30000 });
+  }>(`/investigators?${params.toString()}`);
 
   return {
     items: (data.items || []).map(mapToDocente),
@@ -146,7 +144,6 @@ export async function crearDocente(payload: DocentePayload): Promise<DocenteInve
       dni:                    payload.dni,
       nombres:                payload.nombres,
       apellidos:              payload.apellidos,
-      correo:                 payload.email,
       codigo_interno_vrip:    payload.codigoDocente || null,
       condicion_laboral:      'Ordinario',
       departamento_academico: payload.departamento,
@@ -154,7 +151,7 @@ export async function crearDocente(payload: DocentePayload): Promise<DocenteInve
       grado_academico_max:    'Magíster',
       codigo_renacyt:         payload.codigoDocente ? `${payload.dni}_ren` : null,
       orcid:                  null,
-      categoria_renacyt:      payload.nivelRenacyt,
+      categoria_renacyt:      payload.nivelRenacyt === 'DISTINGUIDO' ? 'ID' : (payload.nivelRenacyt === 'Sin nivel' ? 'No Clasificado' : payload.nivelRenacyt),
       estado_renacyt:         payload.estado,
       url_cti_vitae:          null,
       investigador_sm:        payload.condicionSM === 'SM',
@@ -162,6 +159,7 @@ export async function crearDocente(payload: DocentePayload): Promise<DocenteInve
       tiene_deuda_gi:         false,
       tiene_deuda_pi:         false,
       is_external:            false, // Al registrarse formalmente, deja de ser puramente externo
+      correo:                 payload.email,
     }, { onConflict: 'dni' })
     .select()
     .single();
@@ -208,12 +206,12 @@ export async function actualizarDocente(
       nombres:                payload.nombres,
       apellidos:              payload.apellidos,
       dni:                    payload.dni,
-      correo:                 payload.email,
       codigo_interno_vrip:    payload.codigoDocente || null,
       departamento_academico: payload.departamento,
-      categoria_renacyt:      payload.nivelRenacyt,
+      categoria_renacyt:      payload.nivelRenacyt === 'DISTINGUIDO' ? 'ID' : (payload.nivelRenacyt === 'Sin nivel' ? 'No Clasificado' : payload.nivelRenacyt),
       investigador_sm:        payload.condicionSM === 'SM',
       estado_vigencia:        estadoMapeado,
+      correo:                 payload.email,
       updated_at:             new Date().toISOString(),
     })
     .eq('dni', id)
