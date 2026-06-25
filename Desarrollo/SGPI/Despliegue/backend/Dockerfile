@@ -43,8 +43,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY . .
 
 RUN find /app -type d -name "vrip_connector"
-
-ENV PYTHONPATH="${PYTHONPATH}:/app/app/etl/connectors/SGPI-CJCA"
+RUN python -c "import sys; print(sys.path)"
 
 # Crear directorios necesarios para logs y cargas temporales con permisos de escritura
 RUN mkdir -p logs tmp_uploads && chmod -R 777 logs tmp_uploads
