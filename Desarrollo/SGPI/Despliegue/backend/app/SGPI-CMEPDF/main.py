@@ -1,11 +1,13 @@
 import uvicorn
 import logging
 from fastapi import FastAPI
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as pdf_router
-import os
 
-FRONTEND_ORIGINS = os.getenv("ALLOWED_ORIGINS", "").split(",")
+
+origins = os.getenv("ALLOWED_ORIGINS", "")
+origins = [o.strip() for o in origins.split(",") if o.strip()]
 
 # Setup basic logging configuration
 logging.basicConfig(
@@ -24,7 +26,7 @@ app = FastAPI(
 # Enable CORS for Next.js frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=FRONTEND_ORIGINS,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
