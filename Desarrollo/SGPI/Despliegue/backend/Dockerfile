@@ -42,8 +42,13 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copiar todo el código fuente del backend al contenedor
 COPY . .
 
+RUN echo "=== BUSCANDO VRIP_CONNECTOR ==="
 RUN find /app -type d -name "vrip_connector"
-RUN python -c "import sys; print(sys.path)"
+
+RUN echo "=== PYTHONPATH ==="
+RUN python -c "import sys; print('\n'.join(sys.path))"
+
+ENV PYTHONPATH="${PYTHONPATH}:/app/app/etl/connectors/SGPI-CJCA"
 
 # Crear directorios necesarios para logs y cargas temporales con permisos de escritura
 RUN mkdir -p logs tmp_uploads && chmod -R 777 logs tmp_uploads
