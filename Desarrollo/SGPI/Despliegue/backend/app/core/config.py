@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
-
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SGPI - Sistema de Gestión de Producción Intelectual"
     VERSION: str = "1.0.0"
@@ -52,15 +51,16 @@ class Settings(BaseSettings):
     #   FRONTEND_ORIGINS=http://localhost:3000,https://mi-dominio.com
     # -------------------------------------------------------------------------
     FRONTEND_ORIGINS: str = ""
-
+    
     @property
-    def ALLOWED_ORIGINS(self) -> List[str]:
-        origins = [o.strip() for o in self.FRONTEND_ORIGINS.split(",") if o.strip()]
-        print("🔥 FRONTEND_ORIGINS RAW:", self.FRONTEND_ORIGINS)
-        print("🔥 ALLOWED_ORIGINS PARSED:", origins)
-
+    def ALLOWED_ORIGINS(self) -> list[str]:
+        origins = []
+        for o in self.FRONTEND_ORIGINS.split(","):
+            o = o.strip().rstrip("/")
+            if o:
+                origins.append(o)
         return origins
-
+    
     # -------------------------------------------------------------------------
     # Supabase Auth
     # -------------------------------------------------------------------------
