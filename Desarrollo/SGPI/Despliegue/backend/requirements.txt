@@ -41,4 +41,6 @@ aiofiles>=23.0.0
 
 # Caché con Redis
 redis>=5.0.0
+supabase>=2.0.0 
+reportlab>=4.0.0
 
