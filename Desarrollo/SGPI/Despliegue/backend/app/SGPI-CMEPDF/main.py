@@ -6,20 +6,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as pdf_router
 
 
-origins = [
-    o.strip()
-    for o in os.getenv("ALLOWED_ORIGINS", "").split(",")
-    if o.strip()
-]
-
-print("ORIGINS LOADED:", origins)
-
 # Setup basic logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("pdf-service")
+
+origins = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
+]
+
+logger.info(f"ORIGINS LOADED: {origins}")
 
 # Initialize FastAPI app
 app = FastAPI(
