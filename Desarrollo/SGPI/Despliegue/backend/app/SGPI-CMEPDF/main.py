@@ -1,34 +1,27 @@
+# main.py
 import uvicorn
 import logging
 from fastapi import FastAPI
-import os
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as pdf_router
+from core.config import settings  # ← importa tu settings
 
-
-# Setup basic logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("pdf-service")
 
-origins = [
-    o.strip()
-    for o in os.getenv("ALLOWED_ORIGINS", "").split(",")
-    if o.strip()
-]
-
+# Usa settings.ALLOWED_ORIGINS en vez de os.getenv
+origins = settings.ALLOWED_ORIGINS
 logger.info(f"ORIGINS LOADED: {origins}")
 
-# Initialize FastAPI app
 app = FastAPI(
     title="SGPI generic PDF Generator Engine",
     description="Motor microservicio genérico de compilación y streaming de documentos PDF para la FISI-UNMSM.",
     version="1.0.0"
 )
 
-# Enable CORS for Next.js frontend integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -37,15 +30,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register PDF Engine Routes
 app.include_router(pdf_router)
 
 @app.get("/health", tags=["system"])
 def health_check():
-    """
-    Endpoint de monitoreo (Keep-alive) consultado periódicamente para evitar
-    el cold start del servidor en hosting gratuito (Render/Render free tier).
-    """
     logger.debug("Health check hit")
     return {
         "status": "healthy",
