@@ -42,6 +42,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copiar todo el código fuente del backend al contenedor
 COPY . .
 
+ENV PYTHONPATH="${PYTHONPATH}:/app/app/etl/connectors/SGPI-CJCA"
+
 # Crear directorios necesarios para logs y cargas temporales con permisos de escritura
 RUN mkdir -p logs tmp_uploads && chmod -R 777 logs tmp_uploads
 
