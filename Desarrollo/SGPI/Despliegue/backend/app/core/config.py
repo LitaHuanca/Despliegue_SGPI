@@ -51,12 +51,15 @@ class Settings(BaseSettings):
     # En .env puede definirse como lista separada por comas:
     #   FRONTEND_ORIGINS=http://localhost:3000,https://mi-dominio.com
     # -------------------------------------------------------------------------
-    FRONTEND_ORIGINS: str = "http://localhost:3000"
+    FRONTEND_ORIGINS: str = ""
 
     @property
     def ALLOWED_ORIGINS(self) -> List[str]:
-        """Devuelve la lista de orígenes permitidos para CORS."""
-        return [o.strip() for o in self.FRONTEND_ORIGINS.split(",") if o.strip()]
+        origins = [o.strip() for o in self.FRONTEND_ORIGINS.split(",") if o.strip()]
+        print("🔥 FRONTEND_ORIGINS RAW:", self.FRONTEND_ORIGINS)
+        print("🔥 ALLOWED_ORIGINS PARSED:", origins)
+
+        return origins
 
     # -------------------------------------------------------------------------
     # Supabase Auth
