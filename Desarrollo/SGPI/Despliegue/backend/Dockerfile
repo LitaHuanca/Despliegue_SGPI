@@ -42,17 +42,6 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copiar todo el código fuente del backend al contenedor
 COPY . .
 
-RUN echo "=== BUSCANDO VRIP_CONNECTOR ==="
-RUN find /app -type d -name "vrip_connector"
-
-RUN echo "=== PYTHONPATH ==="
-RUN python -c "import sys; print('\n'.join(sys.path))"
-
-ENV PYTHONPATH="${PYTHONPATH}:/app/app/etl/connectors/SGPI-CJCA"
-
-RUN python -c "import sys; print(sys.path)"
-RUN python -c "import vrip_connector; print(vrip_connector.__file__)"
-
 # Crear directorios necesarios para logs y cargas temporales con permisos de escritura
 RUN mkdir -p logs tmp_uploads && chmod -R 777 logs tmp_uploads
 
@@ -62,5 +51,3 @@ EXPOSE 8000
 # Comando para ejecutar la aplicación usando Uvicorn
 # Se usa 'sh -c' para expandir la variable de entorno $PORT asignada dinámicamente por Render
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
-
-
