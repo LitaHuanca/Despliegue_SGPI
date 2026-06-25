@@ -6,8 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as pdf_router
 
 
-origins = os.getenv("ALLOWED_ORIGINS", "")
-origins = [o.strip() for o in origins.split(",") if o.strip()]
+origins = [
+    o.strip()
+    for o in os.getenv("ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
+]
+
+print("ORIGINS LOADED:", origins)
 
 # Setup basic logging configuration
 logging.basicConfig(
