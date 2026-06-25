@@ -24,8 +24,11 @@ export type UserRole = 'admin' | 'secretary' | 'chief' | 'readonly';
 export const ROLE_MAP: Record<string, UserRole> = {
   Administrador: 'admin',
   Secretaria:    'secretary',
+  Secretaria_UI: 'secretary',
   Jefe:          'chief',
+  'Jefe Instituto': 'chief',
   Consulta:      'readonly',
+  Investigador:  'readonly',
 } as const;
 
 /**

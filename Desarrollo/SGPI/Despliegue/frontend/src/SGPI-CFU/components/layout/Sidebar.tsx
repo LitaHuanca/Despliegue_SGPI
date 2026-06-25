@@ -13,22 +13,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-// import { useAuth } from '../../lib/hooks/useAuth';
+import { useAuth } from '../../lib/hooks/useAuth';
 import type { UserRole } from '../../lib/types/auth';
-
-// ── Mock temporal de useAuth (sin backend) ───────────────────────────────────
-// TODO: reemplazar por useAuth real cuando el backend esté disponible
-function useMockAuth() {
-  return {
-    user: {
-      id: 'mock-1',
-      name: 'Ana Mendoza',
-      email: 'amendoza@unmsm.edu.pe',
-      role: 'admin' as UserRole,
-    },
-    logout: async () => { console.log('logout (mock)'); },
-  };
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Íconos SVG inline (outline, 18×18, stroke-1.75)
@@ -256,7 +242,7 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useMockAuth();
+  const { user, logout } = useAuth();
 
   /** Filtra los items visibles según el rol del usuario */
   const visibleItems = NAV_ITEMS.filter((item) => {
@@ -274,8 +260,13 @@ export function Sidebar() {
     return decodedPath === item.href || decodedPath.startsWith(`${item.href}/`);
   };
 
-  const handleLogout = () => {
-    router.push('/auth/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      router.push('/auth/login');
+    }
   };
 
   return (

@@ -20,20 +20,21 @@ async def log_audit_event(
 ):
     """
     Inserta un registro inmutable en la tabla de auditoría.
-    Evita fallos por UUID inválido y no propaga errores para no romper la transacción principal.
+    Usa una sesión INDEPENDIENTE para no afectar la transacción del endpoint principal.
+    Nunca propaga excepciones — la auditoría es siempre no-crítica.
     """
-    try:
-        if isinstance(id_usuario, str):
-            try:
-                parsed_user_id = uuid.UUID(id_usuario)
-            except (ValueError, AttributeError):
-                logger.warning(f"ID usuario '{id_usuario}' no es un UUID válido. Se guardará como NULL en el log de auditoría.")
-                parsed_user_id = None
-        else:
-            parsed_user_id = id_usuario
-    except Exception as parse_err:
-        logger.warning(f"Error procesando id_usuario '{id_usuario}': {parse_err}")
-        parsed_user_id = None
+    from app.db.session import AsyncSessionLocal
+
+    # Parsear id_usuario a UUID — si falla o no existe en la tabla
+    # usuario local, simplemente se guarda NULL (ON DELETE SET NULL).
+    parsed_user_id: Optional[uuid.UUID] = None
+    if isinstance(id_usuario, str) and id_usuario:
+        try:
+            parsed_user_id = uuid.UUID(id_usuario)
+        except (ValueError, AttributeError):
+            logger.warning(
+                f"[AUDIT] id_usuario '{id_usuario}' no es un UUID válido — se guarda NULL."
+            )
 
     log_entry = LogAuditoria(
         id_log=uuid.uuid4(),
@@ -45,18 +46,38 @@ async def log_audit_event(
         id_usuario=parsed_user_id,
         ip_origen=ip_origen,
         resultado=resultado,
-        detalle_error=detalle_error
+        detalle_error=detalle_error,
     )
-    
+
+    # Usar sesión propia para aislar completamente la auditoría
     try:
-        db.add(log_entry)
-        await db.commit()
-        await db.refresh(log_entry)
+        async with AsyncSessionLocal() as audit_session:
+            async with audit_session.begin():
+                audit_session.add(log_entry)
+        logger.debug(
+            f"[AUDIT] Registrado: {tipo_evento} sobre {entidad_afectada}({pk_entidad})"
+        )
         return log_entry
-    except Exception as db_err:
-        logger.error(f"Error al guardar log de auditoría (operación no crítica): {db_err}")
-        try:
-            await db.rollback()
-        except Exception as rb_err:
-            logger.error(f"Error al hacer rollback después de fallo de auditoría: {rb_err}")
+    except Exception as audit_err:
+        # Si el id_usuario no existe en tabla usuario local (FK), reintentar con NULL
+        if "foreign key" in str(audit_err).lower() and parsed_user_id is not None:
+            logger.warning(
+                f"[AUDIT] id_usuario {parsed_user_id} no existe en tabla usuario local. "
+                f"Reintentando con id_usuario=NULL."
+            )
+            log_entry.id_usuario = None
+            try:
+                async with AsyncSessionLocal() as audit_session2:
+                    async with audit_session2.begin():
+                        audit_session2.add(log_entry)
+                logger.debug(f"[AUDIT] Registrado con id_usuario=NULL.")
+                return log_entry
+            except Exception as retry_err:
+                logger.error(
+                    f"[AUDIT] Fallo al reintentar auditoría (operación no crítica): {retry_err}"
+                )
+        else:
+            logger.error(
+                f"[AUDIT] Fallo al registrar auditoría (operación no crítica): {audit_err}"
+            )
         return None
